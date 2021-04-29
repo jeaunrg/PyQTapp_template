@@ -2,7 +2,8 @@
 resources/data/out/*
 
 # Byte-compiled / optimized / DLL files
-src/__pycache__/
+__pycache__/
+!**/__pycache__/
 *.py[cod]
 *$py.class
 
