@@ -1,0 +1,1 @@
+PyQTapp_template
