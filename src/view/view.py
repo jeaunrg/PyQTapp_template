@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
-from src import DESIGN_DIR
+from src import DESIGN_DIR, DEFAULT
 import json
 import os
 import pdb
@@ -13,6 +13,7 @@ class View(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi(os.path.join(DESIGN_DIR, "ui", "MainView.ui"), self)
+
         self.modules = {}
         self.add.clicked.connect(lambda: self.addModule("module1"))
 
@@ -41,18 +42,18 @@ class View(QtWidgets.QMainWindow):
             menuThemes.addAction(getAction(theme, self.loadTheme))
 
         # set default style
-        self.loadStyle()
         self.loadTheme()
+        self.loadStyle()
 
 
-    def loadTheme(self, theme='dark'):
+    def loadTheme(self, theme=DEFAULT['theme']):
         with open(os.path.join(DESIGN_DIR, "themes", theme + ".json"), "r") as f:
             self.theme = json.load(f)
         if self.style is not None:
             QtWidgets.qApp.setStyleSheet(self.style % self.theme['qss'])
 
 
-    def loadStyle(self, style='StyleTemplate'):
+    def loadStyle(self, style=DEFAULT['style']):
         with open(os.path.join(DESIGN_DIR, "qss", style+".qss"), "r") as f:
             self.style = f.read()
         if self.theme is not None:

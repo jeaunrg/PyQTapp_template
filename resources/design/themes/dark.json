@@ -13,10 +13,5 @@
         "warning_color":    "rgba(234, 93, 68, 255)",
         "info_color":       "rgba(221, 186, 137, 255)",
         "valid_color":      "rgba(115, 201, 144, 255)"
-    },
-
-    "background_brush": "QtGui.QBrush(QtGui.QColor(0, 0, 0, 10), QtCore.Qt.CrossPattern)",
-    "junction_size": [0, 5],
-    "link_width": 2,
-    "handle_size": [0, -20, 0, 0]
+    }
 }

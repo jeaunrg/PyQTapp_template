@@ -42,6 +42,7 @@ class Presenter():
     def manage_output(self, module, output):
         """
         This method manage the output of a model function based on the output type
+        it is called by the view_manager at the end of the model process
 
         Parameters
         ----------
