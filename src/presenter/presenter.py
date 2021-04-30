@@ -1,6 +1,5 @@
 from datetime import datetime
 from src.presenter.utils import view_manager
-from src.view import ui
 
 
 class Presenter():
@@ -14,7 +13,7 @@ class Presenter():
     view: view.View
 
     """
-    def __init__(self, model, view):
+    def __init__(self, view, model=None):
         self._model = model
         self._view = view
         self.threading_enabled = True

@@ -18,6 +18,6 @@ def main():
     # background processes
     model = Model()
     # bridge between processes and UI
-    Presenter(model, view)
+    Presenter(view, model)
 
     app.exec()
