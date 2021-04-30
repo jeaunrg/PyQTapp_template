@@ -1,0 +1,14 @@
+{
+    "load": {
+        "type": "primary"
+    },
+    "load2": {
+        "type": "secondary"
+    },
+    "rename": {
+        "type": "secondary"
+    },
+    "delete": {
+        "type": "secondary"
+    }
+}

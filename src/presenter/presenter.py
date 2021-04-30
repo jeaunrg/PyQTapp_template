@@ -1,4 +1,7 @@
 from src.presenter.utils import view_manager
+from src import CONFIG_DIR
+import json
+import os
 
 
 class Presenter():
@@ -20,8 +23,8 @@ class Presenter():
 
     # ------------------------------ CONNECTIONS ------------------------------#
     def init_view_connections(self):
-        self._view.add.clicked.connect(lambda: (self._view.addModule("module1"),
-                                                self.init_module_connections("module1")))
+        self.modules = json.load(open(os.path.join(CONFIG_DIR, "modules.json"), "rb"))
+        self._view.initMenu(self.modules)
 
     def init_module_connections(self, module_name):
         """
@@ -42,7 +45,6 @@ class Presenter():
             module.button.clicked.connect(lambda: self.call_function1(module))
 
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
-
     def prior_to_function(self, module):
         """
         This method is called by the view_manager before of the function call

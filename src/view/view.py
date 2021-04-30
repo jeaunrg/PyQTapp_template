@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from src import DESIGN_DIR, DEFAULT
+from src.view import graph, utils
 import json
 import os
 
@@ -66,7 +67,21 @@ class View(QtWidgets.QMainWindow):
         """
         This method init widgets UI for the main window
         """
-        return
+        self.graph = graph.QCustomGraphicsView(self, 'horizontal')
+        self.setCentralWidget(self.graph)
+
+    def initMenu(self, modules):
+        """
+        create right-clic menu from modules
+        """
+        # initalize right-clic-menu
+        self.menu = {}
+        for k, values in modules.items():
+            lst = [values['type']]
+            if 'menu' in values:
+                lst += values['menu'].split('/')
+            lst.append(k)
+            utils.dict_from_list(self.menu, lst)
 
     def addModule(self, moduleName):
         """
