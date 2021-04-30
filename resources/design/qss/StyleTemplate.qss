@@ -99,6 +99,47 @@ QLabel {
     color: %(maintext_color)s;
 }
 
+QComboBox::drop-down {
+    border: none;
+}
+
+Junction {
+    color: feature_color;
+    background-color: feature_color;
+}
+
+
+QScrollBar:horizontal {
+	max-height: 10px;
+	border: 1px transparent;
+	margin: 0px 20px 0px 20px;
+	background: transparent;
+}
+QScrollBar:vertical {
+	max-width: 10px;
+	border: 1px transparent;
+	margin: 20px 0px 20px 0px;
+	background: transparent;
+}
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+	background: %(buttonback_color)s;
+	border-style: transparent;
+	border-radius: 4px;
+	min-height: 25px;
+}
+QScrollBar::handle:horizontal:hover, QScrollBar::handle:vertical:hover {
+	background: %(feature_color)s;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal, QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
 QProgressBar {
     max-height: 4px;
     border-color: transparent;
