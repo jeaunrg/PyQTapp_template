@@ -2,8 +2,6 @@ from PyQt5 import QtCore
 import numpy as np
 import copy
 import os
-
-
 class Runner(QtCore.QThread):
     """
     QThread that activate a function with arguments
