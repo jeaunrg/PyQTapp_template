@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from src import DESIGN_DIR, DEFAULT
 import json
 import os
-import pdb
+
 
 class View(QtWidgets.QMainWindow):
     """
@@ -13,18 +13,21 @@ class View(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi(os.path.join(DESIGN_DIR, "ui", "MainView.ui"), self)
-
         self.modules = {}
-        self.add.clicked.connect(lambda: self.addModule("module1"))
-
+        self.initStyle()
         self.initUI()
 
-    def initUI(self):
+    def initStyle(self):
+        """
+        This method initialize styles and useful icons
+        """
+        # initialize icons
         self._fail = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "fail.png"))
         self._fail = self._fail.scaled(20, 20, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self._valid = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "valid.png"))
         self._valid = self._valid.scaled(20, 20, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
+        # create menu and actions for stylesheet and themes
         self.theme, self.style = None, None
 
         def getAction(name, function):
@@ -41,17 +44,15 @@ class View(QtWidgets.QMainWindow):
         for theme in os.listdir(os.path.join(DESIGN_DIR, 'themes')):
             menuThemes.addAction(getAction(theme, self.loadTheme))
 
-        # set default style
+        # load default style and theme
         self.loadTheme()
         self.loadStyle()
-
 
     def loadTheme(self, theme=DEFAULT['theme']):
         with open(os.path.join(DESIGN_DIR, "themes", theme + ".json"), "r") as f:
             self.theme = json.load(f)
         if self.style is not None:
             QtWidgets.qApp.setStyleSheet(self.style % self.theme['qss'])
-
 
     def loadStyle(self, style=DEFAULT['style']):
         with open(os.path.join(DESIGN_DIR, "qss", style+".qss"), "r") as f:
@@ -61,10 +62,12 @@ class View(QtWidgets.QMainWindow):
         else:
             QtWidgets.qApp.setStyleSheet(self.style)
 
+    def initUI(self):
+        """
+        This method init widgets UI for the main window
+        """
+        return
 
-
-
-    module_added = QtCore.pyqtSignal(str)
     def addModule(self, moduleName):
         """
         add a new module in the central layout
@@ -78,4 +81,3 @@ class View(QtWidgets.QMainWindow):
         self.hbox.addWidget(module)
 
         self.modules[moduleName] = module
-        self.module_added.emit(moduleName)

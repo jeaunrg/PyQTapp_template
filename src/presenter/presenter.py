@@ -1,4 +1,3 @@
-from datetime import datetime
 from src.presenter.utils import view_manager
 
 
@@ -21,7 +20,8 @@ class Presenter():
 
     # ------------------------------ CONNECTIONS ------------------------------#
     def init_view_connections(self):
-        self._view.module_added.connect(lambda e: self.init_module_connections(e))
+        self._view.add.clicked.connect(lambda: (self._view.addModule("module1"),
+                                                self.init_module_connections("module1")))
 
     def init_module_connections(self, module_name):
         """
@@ -41,8 +41,8 @@ class Presenter():
         if module_name == "module1":
             module.button.clicked.connect(lambda: self.call_function1(module))
 
-
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
+
     def prior_to_function(self, module):
         """
         This method is called by the view_manager before of the function call
@@ -51,7 +51,7 @@ class Presenter():
         ----------
         module: QWidget
         """
-        module.loading.setMaximum(0) # activate eternal loading
+        module.loading.setMaximum(0)  # activate eternal loading
         module.state.clear()
         module.setToolTip(None)
 
@@ -78,7 +78,7 @@ class Presenter():
         # on the same button)
         are_running = [r.isRunning() for r in module._runners]
         if not any(are_running):
-            module.loading.setMaximum(1) # deactivate eternal loading
+            module.loading.setMaximum(1)  # deactivate eternal loading
 
     # ----------------------------- MODEL CALL --------------------------------#
     @view_manager(True)
