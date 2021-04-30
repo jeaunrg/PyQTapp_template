@@ -2,8 +2,6 @@ from PyQt5 import QtCore
 import numpy as np
 import copy
 import os
-RUNNERS = []
-N_RUNNERS = {}
 
 
 class Runner(QtCore.QThread):
@@ -30,7 +28,7 @@ class Runner(QtCore.QThread):
 
 def view_manager(threadable=True):
     """
-    this decorator manage the loading gif and threading
+    this decorator manage threading
 
     Parameters
     ----------
@@ -40,29 +38,18 @@ def view_manager(threadable=True):
     """
     def decorator(foo):
         def inner(presenter, module):
-            module.loading.setMaximum(0)
-            module.state.clear()
-            module.setToolTip(None)
+            presenter.prior_to_function(module)
             function, args = foo(presenter, module)
-
-            def del_run(runner=None):
-                if runner is not None:
-                    module._runners.remove(runner)
-                stop_loading = 1
-                for r in module._runners:
-                    if r.isRunning():
-                        stop_loading = 0
-                module.loading.setMaximum(stop_loading)
 
             # start the process inside a QThread
             if threadable and presenter.threading_enabled:
                 runner = Runner(function, **args)
                 module._runners.append(runner)
-                runner.finished.connect(lambda: (presenter.manage_output(module, runner.out),
-                                                 del_run()))
+                runner.finished.connect(lambda: (presenter.post_function(module, runner.out),
+                                                 module._runners.remove(runner)))
                 runner.start()
             else:
-                presenter.manage_output(module, function(**args))
-                del_run()
+                presenter.post_function(module, function(**args))
+                module._runners.remove(runner)
         return inner
     return decorator

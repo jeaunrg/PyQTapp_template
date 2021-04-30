@@ -15,7 +15,3 @@ HOW TO ADD A NEW MODULE:
     Buttons must be connected to Presenter methods.
     The presenter methods will get all the widget information and will call the appropriate
     model method (with raw arguments).
-
-
-CREATE A NEW COLOR THEME:
-- create
