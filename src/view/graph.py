@@ -7,6 +7,21 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
     def __init__(self, *args, **kwargs):
         super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
 
+    def showResult(self, result):
+        # create the output widget depending on output type
+        if isinstance(result, (int, float)):
+            new_widget = QtWidgets.QLabel(str(result))
+            font = QtGui.QFont()
+            font.setPointSize(40)
+            new_widget.setFont(font)
+        else:
+            return
+
+        # replace current output widget with the new one
+        self.vbox.replaceWidget(self.result, new_widget)
+        self.result.deleteLater()
+        self.result = new_widget
+
 
 class QCustomGraphicsView(QtWidgets.QGraphicsView):
     """
@@ -228,7 +243,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
                 parents[i] = self.nodes[parent]
         name = self.getUniqueName(type)
         node = QCustomGraphicsNode(self, type, name, parents)
-        node.addToScene(self.scene, )
+        node.addToScene(self.scene)
 
         node.button.clicked.connect(lambda: self.nodeClicked.emit(node))
 

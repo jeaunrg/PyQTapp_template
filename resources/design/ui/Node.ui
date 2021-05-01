@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>229</width>
-    <height>136</height>
+    <width>218</width>
+    <height>141</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -58,10 +58,10 @@
       </widget>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="parameters"/>
+      <widget class="QWidget" name="parameters" native="true"/>
      </item>
-     <item>
-      <layout class="QVBoxLayout" name="result"/>
+     <item alignment="Qt::AlignHCenter|Qt::AlignTop">
+      <widget class="QWidget" name="result" native="true"/>
      </item>
     </layout>
    </item>

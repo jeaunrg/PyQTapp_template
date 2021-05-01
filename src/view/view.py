@@ -24,9 +24,9 @@ class View(QtWidgets.QMainWindow):
         """
         # initialize icons
         self._fail = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "fail.png"))
-        self._fail = self._fail.scaled(20, 20, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        self._fail = self._fail.scaled(15, 15, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self._valid = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "valid.png"))
-        self._valid = self._valid.scaled(20, 20, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        self._valid = self._valid.scaled(15, 15, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
         # create menu and actions for stylesheet and themes
         self.theme, self.style = None, None

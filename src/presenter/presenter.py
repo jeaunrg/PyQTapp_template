@@ -1,5 +1,5 @@
 from src.presenter.utils import view_manager
-from src import CONFIG_DIR
+from src import CONFIG_DIR, DESIGN_DIR
 import json
 import os
 
@@ -25,8 +25,9 @@ class Presenter():
     def init_view_connections(self):
         self.modules = json.load(open(os.path.join(CONFIG_DIR, "modules.json"), "rb"))
         self._view.initMenu(self.modules)
+        self._view.graph.nodeClicked.connect(lambda m: self.init_module_connections(m))
 
-    def init_module_connections(self, module_name):
+    def init_module_connections(self, module):
         """
         initialize module parameters if necessary
         create connections between view widgets and functions
@@ -37,12 +38,20 @@ class Presenter():
             name of the loaded module
 
         """
-        module = self._view.modules[module_name]
         module._runners = []
+        parameters = self.modules[module.type]
+
+        # add parameters widget
+        if 'ui' not in parameters:
+            return print(".ui file path not specified in modules.json")
+        uifile_path = os.path.join(DESIGN_DIR, 'ui', parameters['ui'])
+        if not os.path.isfile(uifile_path):
+            return print("{} does not exists".format(uifile_path))
+        module.setParametersWidget(uifile_path)
 
         # do connections
-        if module_name == "module1":
-            module.button.clicked.connect(lambda: self.call_function1(module))
+        if module.type == "module1":
+            module.parameters.apply.clicked.connect(lambda: self.call_function1(module))
 
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
     def prior_to_function(self, module):
@@ -54,8 +63,8 @@ class Presenter():
         module: QWidget
         """
         module.loading.setMaximum(0)  # activate eternal loading
-        module.state.clear()
-        module.setToolTip(None)
+        module.lefthead.clear()
+        module.lefthead.setToolTip(None)
 
     def post_function(self, module, output):
         """
@@ -69,12 +78,13 @@ class Presenter():
         """
 
         if isinstance(output, Exception):
-            module.state.setToolTip("[{0}] {1}".format(type(output).__name__, output))
-            module.state.setPixmap(self._view._fail)
+            module.lefthead.setToolTip("[{0}] {1}".format(type(output).__name__, output))
+            module.lefthead.setPixmap(self._view._fail)
         else:
             if isinstance(output, int):
-                module.result.setText(str(output))
-            module.state.setPixmap(self._view._valid)
+                module.showResult(output)
+                # module.result.setText(str(output))
+            module.lefthead.setPixmap(self._view._valid)
 
         # stop loading if one process is still running (if click multiple time
         # on the same button)
@@ -87,10 +97,10 @@ class Presenter():
     def call_function1(self, module):
         # set model inputs
         function = self._model.function1
-        args = {"minimum": module.minimum.value(),
-                "maximum": module.maximum.value(),
-                "sleep_time": module.sleeptime.value(),
-                "insert_error": module.inserterror.isChecked()}
+        args = {"minimum": module.parameters.minimum.value(),
+                "maximum": module.parameters.maximum.value(),
+                "sleep_time": module.parameters.sleeptime.value(),
+                "insert_error": module.parameters.inserterror.isChecked()}
 
         # the view manager decorator will handle the function and its arguments
         return function, args

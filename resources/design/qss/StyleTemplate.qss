@@ -141,7 +141,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal, QScrollBar::ad
 }
 
 QProgressBar {
-    max-height: 4px;
+    max-height: 2px;
     border-color: transparent;
     background-color: transparent;
 }

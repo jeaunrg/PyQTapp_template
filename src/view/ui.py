@@ -56,12 +56,14 @@ class QViewWidget(QtWidgets.QWidget):
         footer.addWidget(self.rightfoot)
         footer.addWidget(self._sizeGrip)
 
+        self.centralWidget = QtWidgets.QWidget()
+
         # fill layout
         vbox = QtWidgets.QVBoxLayout()
         vbox.setSpacing(0)
         vbox.setContentsMargins(0, 0, 0, 0)
         vbox.addLayout(header)
-        vbox.addWidget(QtWidgets.QWidget())
+        vbox.addWidget(self.centralWidget)
         vbox.addLayout(footer)
         self.setLayout(vbox)
 
@@ -116,8 +118,10 @@ class QViewWidget(QtWidgets.QWidget):
         if inter:
             return print("FAILED setWidget: you cannot set widget in QViewWidget " +
                          "containing parameters like:\n " + " ".join(list(inter)))
-        self.layout().replaceWidget(self.layout().itemAt(1).widget(), widget)
+        self.layout().replaceWidget(self.centralWidget, widget)
         self.__dict__.update(widget.__dict__)
+        self.centralWidget.deleteLater()
+        self.centralWidget = widget
 
     def addToScene(self, scene):
         self.sizeChanged.connect(lambda: self._item.setRect(QtCore.QRectF(self.geometry().adjusted(0, 0, 0, 0))))
@@ -389,6 +393,12 @@ class QGraphicsNode(ui.QViewWidget):
         self.button.setText(new_name)
         self.nameChanged.emit(self.name, new_name)
         self.name = new_name
+
+    def setParametersWidget(self, ui_file):
+        new_widget = uic.loadUi(ui_file)
+        self.vbox.replaceWidget(self.parameters, new_widget)
+        self.parameters.deleteLater()
+        self.parameters = new_widget
 
     def updateCurrentBranch(self):
         """
