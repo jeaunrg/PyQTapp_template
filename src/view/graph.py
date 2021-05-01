@@ -130,6 +130,8 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         if obj == self:
             if event.type() == QtCore.QEvent.Wheel:
                 return True
+            if event.type() == QtCore.QEvent.MouseButtonPress:
+                self.unselectNodes()
             elif event.type() == QtCore.QEvent.KeyPress:
                 if event.key() == QtCore.Qt.Key_Shift:
                     self.holdShift = True
@@ -141,6 +143,10 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
                 elif event.key() == QtCore.Qt.Key_Control:
                     self.holdCtrl = False
         return super(QCustomGraphicsView, self).eventFilter(obj, event)
+
+    def unselectNodes(self):
+        for node in self.nodes.values():
+            node.selected.setChecked(False)
 
     def getUniqueName(self, name, exception=None):
         """
@@ -183,12 +189,11 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
             nodes = []
         else:
             acts = self._view.menu.get('secondary')
-            nodes = [node]
+            nodes = [node] + self.getSelectedNodes()
+            nodes = list(set(nodes))
+
         if acts is None:
             return
-
-        nodes += self.getSelectedNodes()
-        nodes = list(set(nodes))
 
         def activate(action):
             type = action.text()
@@ -198,6 +203,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
                 self.deleteBranch(node)
             else:
                 self.addNode(action.text(), nodes)
+
         menu = utils.menu_from_dict(acts, activation_function=activate)
         pos = QtGui.QCursor.pos()
         self._mouse_position = self.mapToScene(self.mapFromGlobal(pos))
@@ -248,7 +254,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         for k, values in settings.items():
             self.addNode(**values)
 
-    def addNode(self, type, parents=[]):
+    def addNode(self, type, parents=None):
         """
         create a node with specified parent nodes
 
@@ -259,8 +265,11 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         parents: list of QCustomGraphicsNode or QCustomGraphicsNode
 
         """
+        if parents is None:
+            parents = []
         if not isinstance(parents, list):
             parents = [parents]
+
         for i, parent in enumerate(parents):
             if isinstance(parent, str):
                 parents[i] = self.nodes[parent]
@@ -274,6 +283,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         else:
             child_pos = None
             parent_pos = None
+            print(parents)
             for i, parent in enumerate(parents):
                 self.bind(parent, node)
                 if len(parent.childs) > 0:

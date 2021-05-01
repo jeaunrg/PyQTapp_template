@@ -4,8 +4,7 @@
         "function": "call_function1"
     },
     "module2": {
-        "type": "secondary",
-        "ui": "module1.ui"
+        "type": "secondary"
     },
     "rename": {
         "type": "secondary"

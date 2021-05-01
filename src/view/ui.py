@@ -13,7 +13,6 @@ def ceval(arg):
 
 
 class QGrap(QtWidgets.QWidget):
-    moved = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -167,21 +166,26 @@ class QGraphicsNode(ui.QViewWidget):
         self.button.setText(name)
         self.state = None
 
-        self.positionChanged.connect(self.moveChilds)
         self.sizeChanged.connect(self.updateHeight)
         self.focused.connect(self.focusNode)
+        self.selected.stateChanged.connect(self.changeChildSelection)
+        self.selected.stateChanged.connect(self._item.setSelected)
 
         self.current_branch = []
         self.childs = []
         self.parents = parents
         self.links = []
 
+    def changeChildSelection(self, state):
+        if self.graph.holdShift:
+            for child in self.childs:
+                child.selected.setChecked(state)
+
     def updateHeight(self, force=False):
         """
         resize widget to its minimum height
         """
         if force:
-            print(self.sizeHint())
             width = self.width()
             self.adjustSize()
             self.resize(width, self.minimumHeight()+1)
@@ -191,6 +195,7 @@ class QGraphicsNode(ui.QViewWidget):
         """
         if shift is holded, move node childs with it
         """
+        return
         if self.graph.holdShift:
             return
             if self.state == 'pressed':
