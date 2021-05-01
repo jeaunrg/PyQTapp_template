@@ -51,6 +51,7 @@ class QViewWidget(QtWidgets.QWidget):
         self._sizeGrip = QtWidgets.QSizeGrip(self)
         self._sizeGrip.mouseMoveEvent = lambda event: self.resize(self.width() + event.pos().x(),
                                                                   self.height() + event.pos().y())
+
         footer.addWidget(self.leftfoot)
         footer.addStretch(0)
         footer.addWidget(self.rightfoot)
@@ -129,178 +130,6 @@ class QViewWidget(QtWidgets.QWidget):
         scene.addItem(self._item)
 
 
-# class QViewWidget1(QtWidgets.QWidget):
-#     """
-#     resizable and movable widget inside QGraphicsScene
-#
-#     Parameters
-#     ----------
-#     resizable: bool, default=True
-#         if True add a grip at the bootom right corner to resize the widget
-#     handleSize: tuple of 4 float, default=(0, -20, 0, 0)
-#         size of the handle to move the view widget (left, top, right, bottom)
-#     handleColor: QtGui.QColor, default=(180, 200, 180)
-#         rgb color of the handle
-#
-#     """
-#     sizeChanged = QtCore.pyqtSignal()
-#     positionChanged = QtCore.pyqtSignal()
-#     focused = QtCore.pyqtSignal(bool)
-#
-#     def __init__(self, resizable=True, handleSize=(0, -20, 0, 0), handleColor=None):
-#         super().__init__()
-#         self.handleSize = handleSize
-#         self.handleColor = handleColor
-#         self._state = None
-#         self.currentPosition = None
-#         self.current_state = 'released'
-#         self.initUI(resizable)
-#
-#     def initUI(self, resizable):
-#         """
-#         initialize widget with footer and handle
-#
-#         Parameters
-#         ----------
-#         resizable: bool
-#             if True add sizegrip to footer
-#         """
-#         vbox = QtWidgets.QVBoxLayout()
-#         vbox.setSpacing(0)
-#         vbox.setContentsMargins(0, 0, 0, 0)
-#
-#         # create header
-#         header = QtWidgets.QHBoxLayout()
-#         self.state = QtWidgets.QLabel()
-#         self.grap = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum,
-#                    QtWidgets.QSizePolicy.Expanding)#QGrapWidget()
-#         self.selected = QtWidgets.QCheckBox()
-#         header.addWidget(self.state)
-#         header.addItem(self.grap)
-#         header.addWidget(self.selected)
-#
-#
-#         # create left and right footer
-#         footer = QtWidgets.QHBoxLayout()
-#         self.leftfoot = QtWidgets.QLabel()
-#         self.rightfoot = QtWidgets.QLabel()
-#         footer.addWidget(self.leftfoot)
-#         footer.addStretch(0)
-#         footer.addWidget(self.rightfoot)
-#
-#         # add size gripto footer  if rezizable
-#         if resizable:
-#             self.sizeGrip = QtWidgets.QSizeGrip(self)
-#             self.sizeGrip.mouseMoveEvent = self._mouseMoveEvent
-#             footer.addWidget(self.sizeGrip)
-#
-#         vbox.addLayout(header)
-#         vbox.addWidget(QtWidgets.QWidget())
-#         vbox.addLayout(footer)
-#         self.setLayout(vbox)
-#
-#         # create handle to move widget
-#         self.handle = self.RectItem(self)
-#         self.handle.setPen(QtGui.QPen(QtCore.Qt.transparent))
-#         if self.handleColor is not None:
-#             self.handle.setBrush(self.handleColor)
-#
-#         # initialize self function from handle functions
-#         self.moveBy = self.handle.moveBy
-#         self.pos = self.handle.pos
-#
-#         self.proxy = QtWidgets.QGraphicsProxyWidget(self.handle)
-#         self.proxy.setWidget(self)
-#
-#     def _mouseMoveEvent(self, event):
-#         self.resize(self.width()+event.pos().x(), self.height()+event.pos().y())
-#
-#     def setWidget(self, widget):
-#         """
-#         update the central widget with new widget
-#
-#         Parameters
-#         ----------
-#         widget: QWidget
-#         """
-#         inter = set(widget.__dict__).intersection(set(self.__dict__))
-#         if inter:
-#             return print("FAILED setWidget: you cannot set widget in QViewWidget " +
-#                          "containing parameters like:\n " + " ".join(list(inter)))
-#
-#         self.layout().replaceWidget(self.layout().itemAt(0).widget(), widget)
-#         self.__dict__.update(widget.__dict__)
-#         print(self.__dict__.keys())
-#
-#     class RectItem(QtWidgets.QGraphicsRectItem):
-#         """
-#         graphic item which allow to move the widget in graphic view
-#
-#         Parameters
-#         ----------
-#         parent: QViewWidget
-#         """
-#         def __init__(self, parent):
-#             super().__init__()
-#             self.parent = parent
-#             self.setAcceptHoverEvents(True)
-#             self.setFlags(QtWidgets.QGraphicsItem.ItemIsMovable |
-#                           QtWidgets.QGraphicsItem.ItemIsFocusable |
-#                           # QtWidgets.QGraphicsItem.ItemIsSelectable |
-#                           QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
-#
-#         def itemChange(self, change, value):
-#             if change in [QtWidgets.QGraphicsItem.ItemPositionChange,
-#                           QtWidgets.QGraphicsItem.ItemVisibleChange]:
-#                 self.parent.positionChanged.emit()
-#                 self.parent.currentPosition = self.parent.handle.pos()
-#             return QtWidgets.QGraphicsRectItem.itemChange(self, change, value)
-#
-#         def mousePressEvent(self, event=None):
-#             self.parent.state = 'pressed'
-#             self.setSelected(True)
-#             return QtWidgets.QGraphicsRectItem.mousePressEvent(self, event)
-#
-#         def mouseReleaseEvent(self, event=None):
-#             self.parent.state = 'released'
-#             self.setSelected(False)
-#             return QtWidgets.QGraphicsRectItem.mouseReleaseEvent(self, event)
-#
-#         def hoverEnterEvent(self, event):
-#             self.parent.focused.emit(True)
-#             return QtWidgets.QGraphicsRectItem.hoverEnterEvent(self, event)
-#
-#         def hoverLeaveEvent(self, event):
-#             self.parent.focused.emit(False)
-#             return QtWidgets.QGraphicsRectItem.hoverLeaveEvent(self, event)
-#
-#     def enterEvent(self, event):
-#         self.focused.emit(True)
-#         return QtWidgets.QWidget.enterEvent(self, event)
-#
-#     def leaveEvent(self, event):
-#         self.focused.emit(False)
-#         return QtWidgets.QWidget.leaveEvent(self, event)
-#
-#     def resizeEvent(self, event):
-#         self.sizeChanged.emit()
-#         return QtWidgets.QWidget.resizeEvent(self, event)
-#
-#     def addToScene(self, scene):
-#         """
-#         add widget to a specified scene
-#
-#         Parameters
-#         ----------
-#         handle_size: tuple of size 4
-#             (left, top, right, bottom)
-#         """
-#         self.sizeChanged.connect(lambda: self.handle.setRect(QtCore.QRectF(
-#                                self.geometry().adjusted(*self.handleSize))))
-#         self.sizeChanged.emit()
-#         scene.addItem(self.handle)
-
-
 class QGraphicsNode(ui.QViewWidget):
     """
     movable widget inside the graph associated to a pipeline's step
@@ -342,6 +171,9 @@ class QGraphicsNode(ui.QViewWidget):
         resize widget to its minimum height
         """
         self.resize(self.width(), self.minimumHeight())
+
+    def forceUpdateHeight(self):
+        self.resize(self.width(), self.height()+1)
 
     def moveChilds(self):
         """

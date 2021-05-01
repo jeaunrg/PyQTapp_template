@@ -2,6 +2,7 @@ from src.presenter.utils import view_manager
 from src import CONFIG_DIR, DESIGN_DIR
 import json
 import os
+from src import RESULT_STACK
 
 
 class Presenter():
@@ -76,15 +77,13 @@ class Presenter():
         module: QWidget
         output: exception, str, pd.DataFrame, np.array, ...
         """
-
+        RESULT_STACK[module.name] = output
         if isinstance(output, Exception):
             module.lefthead.setToolTip("[{0}] {1}".format(type(output).__name__, output))
             module.lefthead.setPixmap(self._view._fail)
         else:
-            if isinstance(output, int):
-                module.showResult(output)
-                # module.result.setText(str(output))
             module.lefthead.setPixmap(self._view._valid)
+        module.updateResult()
 
         # stop loading if one process is still running (if click multiple time
         # on the same button)

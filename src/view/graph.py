@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from src.view import ui, utils
+from src import RESULT_STACK
 import copy
 
 
@@ -7,20 +8,23 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
     def __init__(self, *args, **kwargs):
         super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
 
-    def showResult(self, result):
+    def updateResult(self):
+        result = RESULT_STACK.get(self.name)
+
         # create the output widget depending on output type
-        if isinstance(result, (int, float)):
+        if isinstance(result, (int, float, str, bool)):
             new_widget = QtWidgets.QLabel(str(result))
             font = QtGui.QFont()
             font.setPointSize(40)
             new_widget.setFont(font)
         else:
-            return
+            new_widget = QtWidgets.QWidget()
 
         # replace current output widget with the new one
         self.vbox.replaceWidget(self.result, new_widget)
         self.result.deleteLater()
         self.result = new_widget
+        self.forceUpdateHeight()
 
 
 class QCustomGraphicsView(QtWidgets.QGraphicsView):
