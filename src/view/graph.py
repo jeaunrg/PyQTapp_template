@@ -89,7 +89,8 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         parent, child: Node
             nodes to visually bind
         """
-        link = ui.QGraphicsLink(parent, child)
+
+        link = ui.QGraphicsLink(parent, child, **self._view.theme['arrow'])
 
         parent.positionChanged.connect(link.updatePos)
         parent.sizeChanged.connect(link.updatePos)

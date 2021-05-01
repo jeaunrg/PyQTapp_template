@@ -5,6 +5,13 @@ import os
 import numpy as np
 
 
+def ceval(arg):
+    try:
+        return eval(arg)
+    except (NameError, TypeError):
+        return arg
+
+
 class QGrap(QtWidgets.QWidget):
     moved = QtCore.pyqtSignal()
 
@@ -49,8 +56,8 @@ class QViewWidget(QtWidgets.QWidget):
         self.leftfoot = QtWidgets.QLabel()
         self.rightfoot = QtWidgets.QLabel()
         self._sizeGrip = QtWidgets.QSizeGrip(self)
-        # self._sizeGrip.mouseMoveEvent = lambda event: self.resize(self.width() + event.pos().x(),
-        #                                                           self.height() + event.pos().y())
+        self._sizeGrip.mouseMoveEvent = lambda event: self.resize(self.width() + event.pos().x(),
+                                                                  self.height() + event.pos().y())
 
         footer.addWidget(self.leftfoot)
         footer.addStretch(0)
@@ -67,8 +74,6 @@ class QViewWidget(QtWidgets.QWidget):
         vbox.addWidget(self.centralWidget)
         vbox.addLayout(footer)
         self.setLayout(vbox)
-        # vbox.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
-        # print(self.minimumHeight(), self.minimumWidth())
 
         # create proxy and item to interact with widget
         self._item = self.QCustomRectItem(self)
@@ -78,6 +83,8 @@ class QViewWidget(QtWidgets.QWidget):
         # initialize self function from handle functions
         self.moveBy = self._item.moveBy
         self.pos = self._item.pos
+
+        self.last_position = QtCore.QPointF(0, 0)
 
     class QCustomRectItem(QtWidgets.QGraphicsRectItem):
         """
@@ -158,6 +165,7 @@ class QGraphicsNode(ui.QViewWidget):
         self.type = type
         self.name = name
         self.button.setText(name)
+        self.state = None
 
         self.positionChanged.connect(self.moveChilds)
         self.sizeChanged.connect(self.updateHeight)
@@ -182,10 +190,11 @@ class QGraphicsNode(ui.QViewWidget):
         if shift is holded, move node childs with it
         """
         if self.graph.holdShift:
-            if self.current_state == 'pressed':
-                self.current_state = 'isMoving'
+            return
+            if self.state == 'pressed':
+                self.state = 'isMoving'
                 self.updateCurrentBranch()
-            if self.current_state == 'isMoving':
+            if self.state == 'isMoving':
                 delta = self.pos() - self.currentPosition
                 self.currentPosition = self.pos()
                 for child in self.current_branch:
@@ -265,14 +274,14 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
         color of the arrow border
 
     """
-    def __init__(self, parent, child, width=5, arrowWidth=10, arrowLen=10, space=20,
+    def __init__(self, parent, child, width=5, arrowWidth=10, arrowLen=10, space=[0, 20],
                  color=QtGui.QColor(0, 150, 0), borderWidth=2, borderColor=QtGui.QColor(0, 150, 0)):
         super().__init__()
         self._parent = parent
         self._child = child
         self.setZValue(-1)
-        self.setPen(QtGui.QPen(borderColor, borderWidth))
-        self.setBrush(color)
+        self.setPen(QtGui.QPen(ceval(borderColor), borderWidth))
+        self.setBrush(ceval(color))
         self.width = width
         self.arrowWidth = arrowWidth
         self.arrowLen = arrowLen
@@ -320,8 +329,8 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
         normal = (line.normalVector().unitVector().p2() - line.normalVector().unitVector().p1())
 
         # get arrow point
-        p1 = self.intersects(line, r1, self._parent.pos()) + unit * self.space
-        p2 = self.intersects(line, r2, self._child.pos()) - unit * self.space
+        p1 = self.intersects(line, r1, self._parent.pos()) + unit * self.space[0]
+        p2 = self.intersects(line, r2, self._child.pos()) - unit * self.space[1]
         p11 = p1 + normal * self.width
         p12 = p1 - normal * self.width
         p21 = p2 + normal * self.width - unit * self.arrowLen
@@ -333,4 +342,4 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
         if np.sign((p22 - p12).x()) == np.sign(unit.x()) and np.sign((p22 - p12).y()) == np.sign(unit.y()):
             self.setPolygon(QtGui.QPolygonF([p11, p21, p23, p2, p24, p22, p12, p11]))
         else:
-            self.setPolygon(QtGui.QPolygonF([p23, p2, p24, p23]))
+            self.setPolygon(QtGui.QPolygonF())

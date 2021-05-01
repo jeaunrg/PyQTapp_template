@@ -17,7 +17,15 @@
 
     "background_brush": "QtGui.QBrush(QtGui.QColor(0, 0, 0, 10), QtCore.Qt.CrossPattern)",
 
-    "link_width": 2,
+    "arrow": {
+        "width": 2,
+        "arrowWidth": 6,
+        "arrowLen": 6,
+        "space": [0, 10],
+        "color": "QtGui.QColor(77, 120, 204)",
+        "borderWidth": 0,
+        "borderColor": "QtGui.QColor(77, 120, 204)"
+    },
 
     "handle_color": "QtGui.QColor(33, 37, 43, 255)",
     "handle_size": [0, 0, 0, 0]

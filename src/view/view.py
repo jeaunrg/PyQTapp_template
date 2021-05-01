@@ -15,7 +15,6 @@ class View(QtWidgets.QMainWindow):
         super().__init__()
         uic.loadUi(os.path.join(DESIGN_DIR, "ui", "MainView.ui"), self)
         if DEFAULT['window_size'] == 'fullscreen':
-            # self.setWindowState(QtCore.Qt.WindowFullScreen)
             self.showMaximized()
         else:
             self.resize(*DEFAULT['window_size'])
