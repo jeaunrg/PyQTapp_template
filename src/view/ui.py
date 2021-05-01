@@ -49,8 +49,8 @@ class QViewWidget(QtWidgets.QWidget):
         self.leftfoot = QtWidgets.QLabel()
         self.rightfoot = QtWidgets.QLabel()
         self._sizeGrip = QtWidgets.QSizeGrip(self)
-        self._sizeGrip.mouseMoveEvent = lambda event: self.resize(self.width() + event.pos().x(),
-                                                                  self.height() + event.pos().y())
+        # self._sizeGrip.mouseMoveEvent = lambda event: self.resize(self.width() + event.pos().x(),
+        #                                                           self.height() + event.pos().y())
 
         footer.addWidget(self.leftfoot)
         footer.addStretch(0)
@@ -67,6 +67,8 @@ class QViewWidget(QtWidgets.QWidget):
         vbox.addWidget(self.centralWidget)
         vbox.addLayout(footer)
         self.setLayout(vbox)
+        # vbox.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
+        # print(self.minimumHeight(), self.minimumWidth())
 
         # create proxy and item to interact with widget
         self._item = self.QCustomRectItem(self)
@@ -166,14 +168,14 @@ class QGraphicsNode(ui.QViewWidget):
         self.parents = parents
         self.links = []
 
-    def updateHeight(self):
+    def updateHeight(self, force=False):
         """
         resize widget to its minimum height
         """
-        self.resize(self.width(), self.minimumHeight())
-
-    def forceUpdateHeight(self):
-        self.resize(self.width(), self.height()+1)
+        if force:
+            self.adjustSize()
+            self.resize(self.width(), self.minimumHeight()+1)
+        self.resize(self.width(), 0)
 
     def moveChilds(self):
         """

@@ -1,12 +1,30 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from src.view import ui, utils
-from src import RESULT_STACK
+from src import RESULT_STACK, DESIGN_DIR
 import copy
+import os
 
 
 class QCustomGraphicsNode(ui.QGraphicsNode):
+
     def __init__(self, *args, **kwargs):
         super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
+        self.button.clicked.connect(self.hideShowParameters)
+
+        # add parameters widget
+        uifile_path = os.path.join(DESIGN_DIR, 'ui', self.type+'.ui')
+        if not os.path.isfile(uifile_path):
+            return print("{} does not exists".format(uifile_path))
+        self.setParametersWidget(uifile_path)
+        self.parameters.hide()
+
+    def hideShowParameters(self):
+        if self.parameters.isHidden():
+            self.parameters.show()
+        else:
+            self.parameters.hide()
+        self.graph._view.update()
+        self.updateHeight(force=True)
 
     def updateResult(self):
         result = RESULT_STACK.get(self.name)
@@ -24,7 +42,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         self.vbox.replaceWidget(self.result, new_widget)
         self.result.deleteLater()
         self.result = new_widget
-        self.forceUpdateHeight()
+        self.updateHeight(force=True)
 
 
 class QCustomGraphicsView(QtWidgets.QGraphicsView):
@@ -41,7 +59,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         horizontal is left to right, vertical is top to bottom
 
     """
-    nodeClicked = QtCore.pyqtSignal(QCustomGraphicsNode)
+    nodeAdded = QtCore.pyqtSignal(QCustomGraphicsNode)
 
     def __init__(self, mainwin, direction='horizontal'):
         super().__init__()
@@ -249,11 +267,6 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         node = QCustomGraphicsNode(self, type, name, parents)
         node.addToScene(self.scene)
 
-        node.button.clicked.connect(lambda: self.nodeClicked.emit(node))
-
-        # resize widget in order to update widget minimum height
-        node.button.clicked.connect(lambda: node.resize(node.width(), node.height()+1))
-
         if not parents:
             x, y = self._mouse_position.x(), self._mouse_position.y()
             node.moveBy(x, y)
@@ -278,4 +291,5 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
 
         self.nodes[name] = node
         self.settings[name] = {'type': type, 'parents': [p.name for p in parents]}
+        self.nodeAdded.emit(node)
         return node

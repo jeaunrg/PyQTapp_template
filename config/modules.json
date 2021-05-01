@@ -1,7 +1,7 @@
 {
     "module1": {
         "type": "primary",
-        "ui": "module1.ui"
+        "function": "call_function1"
     },
     "module2": {
         "type": "secondary",

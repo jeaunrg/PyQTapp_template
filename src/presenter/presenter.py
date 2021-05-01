@@ -1,5 +1,5 @@
 from src.presenter.utils import view_manager
-from src import CONFIG_DIR, DESIGN_DIR
+from src import CONFIG_DIR
 import json
 import os
 from src import RESULT_STACK
@@ -26,7 +26,7 @@ class Presenter():
     def init_view_connections(self):
         self.modules = json.load(open(os.path.join(CONFIG_DIR, "modules.json"), "rb"))
         self._view.initMenu(self.modules)
-        self._view.graph.nodeClicked.connect(lambda m: self.init_module_connections(m))
+        self._view.graph.nodeAdded.connect(lambda m: self.init_module_connections(m))
 
     def init_module_connections(self, module):
         """
@@ -39,20 +39,15 @@ class Presenter():
             name of the loaded module
 
         """
-        module._runners = []
         parameters = self.modules[module.type]
+        module._runners = []
 
-        # add parameters widget
-        if 'ui' not in parameters:
-            return print(".ui file path not specified in modules.json")
-        uifile_path = os.path.join(DESIGN_DIR, 'ui', parameters['ui'])
-        if not os.path.isfile(uifile_path):
-            return print("{} does not exists".format(uifile_path))
-        module.setParametersWidget(uifile_path)
+        if 'function' in parameters:
+            activation_function = eval('self.'+parameters['function'])
+            module.parameters.apply.clicked.connect(lambda: activation_function(module))
 
-        # do connections
-        if module.type == "module1":
-            module.parameters.apply.clicked.connect(lambda: self.call_function1(module))
+        # do custom connections
+        # ...
 
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
     def prior_to_function(self, module):
