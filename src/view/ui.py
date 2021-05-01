@@ -181,8 +181,10 @@ class QGraphicsNode(ui.QViewWidget):
         resize widget to its minimum height
         """
         if force:
+            print(self.sizeHint())
+            width = self.width()
             self.adjustSize()
-            self.resize(self.width(), self.minimumHeight()+1)
+            self.resize(width, self.minimumHeight()+1)
         self.resize(self.width(), 0)
 
     def moveChilds(self):
