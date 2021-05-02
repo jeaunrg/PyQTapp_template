@@ -55,8 +55,7 @@ class QViewWidget(QtWidgets.QWidget):
         self.leftfoot = QtWidgets.QLabel()
         self.rightfoot = QtWidgets.QLabel()
         self._sizeGrip = QtWidgets.QSizeGrip(self)
-        self._sizeGrip.mouseMoveEvent = lambda event: self.resize(self.width() + event.pos().x(),
-                                                                  self.height() + event.pos().y())
+        self._sizeGrip.mouseMoveEvent = self.sizeGripMoveEvent
 
         footer.addWidget(self.leftfoot)
         footer.addStretch(0)
@@ -84,6 +83,10 @@ class QViewWidget(QtWidgets.QWidget):
         self.pos = self._item.pos
 
         self.last_position = QtCore.QPointF(0, 0)
+
+    def sizeGripMoveEvent(self, event):
+        self.resize(self.width() + event.pos().x(),
+                    self.height() + event.pos().y())
 
     class QCustomRectItem(QtWidgets.QGraphicsRectItem):
         """
@@ -176,7 +179,6 @@ class QGraphicsNode(ui.QViewWidget):
         self.selected.stateChanged.connect(self._item.setSelected)
         self.positionChanged.connect(self.moveSelection)
 
-        # self.current_branch = []
         self.childs = []
         self.parents = parents
         self.links = []
@@ -204,22 +206,6 @@ class QGraphicsNode(ui.QViewWidget):
             self.adjustSize()
             self.resize(width, self.minimumHeight()+1)
         self.resize(self.width(), 0)
-
-    # def moveChilds(self):
-    #     """
-    #     if shift is holded, move node childs with it
-    #     """
-    #     return
-    #     if self.graph.holdShift:
-    #         return
-    #         if self.state == 'pressed':
-    #             self.state = 'isMoving'
-    #             self.updateCurrentBranch()
-    #         if self.state == 'isMoving':
-    #             delta = self.pos() - self.currentPosition
-    #             self.currentPosition = self.pos()
-    #             for child in self.current_branch:
-    #                 child.moveBy(delta.x(), delta.y())
 
     @property
     def mid_pos(self):
@@ -263,12 +249,6 @@ class QGraphicsNode(ui.QViewWidget):
         self.vbox.replaceWidget(self.parameters, new_widget)
         self.parameters.deleteLater()
         self.parameters = new_widget
-
-    # def updateCurrentBranch(self):
-    #     """
-    #     update the current branch as a unique list of nodes
-    #     """
-    #     self.current_branch = set(self.getChilds())
 
 
 class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
