@@ -13,7 +13,6 @@ def ceval(arg):
 
 
 class QGrap(QtWidgets.QWidget):
-    pressed = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -31,7 +30,6 @@ class QGrap(QtWidgets.QWidget):
             elif event.type() == QtCore.QEvent.MouseButtonPress:
                 QtWidgets.QApplication.restoreOverrideCursor()
                 QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ClosedHandCursor)
-                self.pressed.emit()
         return QtWidgets.QWidget.eventFilter(self, obj, event)
 
 
@@ -113,10 +111,12 @@ class QViewWidget(QtWidgets.QWidget):
 
     def enterEvent(self, event):
         self.focused.emit(True)
+        self._item.setZValue(10)
         return QtWidgets.QWidget.enterEvent(self, event)
 
     def leaveEvent(self, event):
         self.focused.emit(False)
+        self._item.setZValue(1)
         return QtWidgets.QWidget.leaveEvent(self, event)
 
     def resizeEvent(self, event):
@@ -174,7 +174,6 @@ class QGraphicsNode(ui.QViewWidget):
         self.focused.connect(self.focusNode)
         self.selected.stateChanged.connect(self.changeChildSelection)
         self.selected.stateChanged.connect(self._item.setSelected)
-        self.grap.pressed.connect(self.setInitialPosition)
         self.positionChanged.connect(self.moveSelection)
 
         # self.current_branch = []

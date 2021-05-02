@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from src.view import ui, utils
-from src import RESULT_STACK, DESIGN_DIR
+from src import RESULT_STACK, DESIGN_DIR, DEFAULT
 import copy
 import os
 
@@ -279,27 +279,18 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
 
         if not parents:
             x, y = self._mouse_position.x(), self._mouse_position.y()
-            node.moveBy(x, y)
         else:
-            child_pos = None
-            parent_pos = None
-            print(parents)
-            for i, parent in enumerate(parents):
+            max_x_parent = parents[0]
+            for parent in parents:
                 self.bind(parent, node)
-                if len(parent.childs) > 0:
-                    pos = parent.childs[-1].pos()
-                    if child_pos is None or pos.x() > child_pos.x():
-                        child_pos = pos
-                pos = parent.pos()
-                if parent_pos is None or pos.x() > parent_pos.x():
-                    parent_pos = pos
+                if parent.pos().x() > max_x_parent.pos().x():
+                    max_x_parent = parent
                 parent.childs.append(node)
+            Ys = [c.pos().y() + c.height() for c in max_x_parent.childs if c is not node]
+            x = max_x_parent.pos().x() + max_x_parent.width() + DEFAULT['node_space'][0]
+            y = max_x_parent.pos().y() if not Ys else max(Ys) + DEFAULT['node_space'][1]
 
-            if child_pos is None or parent_pos.x() >= child_pos.x():
-                node.moveBy(parent_pos.x()+300, parent_pos.y())
-            else:
-                node.moveBy(child_pos.x(), child_pos.y()+400)
-
+        node.moveBy(x, y)
         self.nodes[name] = node
         self.settings[name] = {'type': type, 'parents': [p.name for p in parents]}
         self.nodeAdded.emit(node)
