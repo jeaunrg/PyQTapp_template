@@ -113,7 +113,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         self.verticalScrollBar().setEnabled(enable_scroll)
         self.horizontalScrollBar().setEnabled(enable_scroll)
 
-    def getSelectedNodes(self):
+    def getSelectedNodes(self, exceptions=[]):
         """
         get all selected nodes (with ctrl+click shortcut)
 
@@ -121,7 +121,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         ------
         result: list of Node
         """
-        return [n for n in self.nodes.values() if n.isSelected()]
+        return [n for n in self.nodes.values() if n.isSelected() and n not in exceptions]
 
     def eventFilter(self, obj, event):
         """

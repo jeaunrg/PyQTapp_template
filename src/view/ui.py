@@ -13,6 +13,7 @@ def ceval(arg):
 
 
 class QGrap(QtWidgets.QWidget):
+    pressed = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -30,6 +31,7 @@ class QGrap(QtWidgets.QWidget):
             elif event.type() == QtCore.QEvent.MouseButtonPress:
                 QtWidgets.QApplication.restoreOverrideCursor()
                 QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.ClosedHandCursor)
+                self.pressed.emit()
         return QtWidgets.QWidget.eventFilter(self, obj, event)
 
 
@@ -102,8 +104,10 @@ class QViewWidget(QtWidgets.QWidget):
                           QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
 
         def itemChange(self, change, value):
-            if change in [QtWidgets.QGraphicsItem.ItemPositionChange,
-                          QtWidgets.QGraphicsItem.ItemVisibleChange]:
+            if change == QtWidgets.QGraphicsItem.ItemPositionChange:
+                self.parent.deltaPosition = value - self.pos()
+                self.parent.positionChanged.emit()
+            elif change == QtWidgets.QGraphicsItem.ItemVisibleChange:
                 self.parent.positionChanged.emit()
             return QtWidgets.QGraphicsRectItem.itemChange(self, change, value)
 
@@ -170,11 +174,22 @@ class QGraphicsNode(ui.QViewWidget):
         self.focused.connect(self.focusNode)
         self.selected.stateChanged.connect(self.changeChildSelection)
         self.selected.stateChanged.connect(self._item.setSelected)
+        self.grap.pressed.connect(self.setInitialPosition)
+        self.positionChanged.connect(self.moveSelection)
 
-        self.current_branch = []
+        # self.current_branch = []
         self.childs = []
         self.parents = parents
         self.links = []
+        self.initialPosition = None
+
+    def moveSelection(self):
+        if self is self.graph.focus:
+            for node in self.graph.getSelectedNodes(exceptions=[self]):
+                node.moveBy(self.deltaPosition.x(), self.deltaPosition.y())
+
+    def setInitialPosition(self):
+        self.initialPosition = self.pos()
 
     def changeChildSelection(self, state):
         if self.graph.holdShift:
@@ -191,21 +206,21 @@ class QGraphicsNode(ui.QViewWidget):
             self.resize(width, self.minimumHeight()+1)
         self.resize(self.width(), 0)
 
-    def moveChilds(self):
-        """
-        if shift is holded, move node childs with it
-        """
-        return
-        if self.graph.holdShift:
-            return
-            if self.state == 'pressed':
-                self.state = 'isMoving'
-                self.updateCurrentBranch()
-            if self.state == 'isMoving':
-                delta = self.pos() - self.currentPosition
-                self.currentPosition = self.pos()
-                for child in self.current_branch:
-                    child.moveBy(delta.x(), delta.y())
+    # def moveChilds(self):
+    #     """
+    #     if shift is holded, move node childs with it
+    #     """
+    #     return
+    #     if self.graph.holdShift:
+    #         return
+    #         if self.state == 'pressed':
+    #             self.state = 'isMoving'
+    #             self.updateCurrentBranch()
+    #         if self.state == 'isMoving':
+    #             delta = self.pos() - self.currentPosition
+    #             self.currentPosition = self.pos()
+    #             for child in self.current_branch:
+    #                 child.moveBy(delta.x(), delta.y())
 
     @property
     def mid_pos(self):
@@ -250,11 +265,11 @@ class QGraphicsNode(ui.QViewWidget):
         self.parameters.deleteLater()
         self.parameters = new_widget
 
-    def updateCurrentBranch(self):
-        """
-        update the current branch as a unique list of nodes
-        """
-        self.current_branch = set(self.getChilds())
+    # def updateCurrentBranch(self):
+    #     """
+    #     update the current branch as a unique list of nodes
+    #     """
+    #     self.current_branch = set(self.getChilds())
 
 
 class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
