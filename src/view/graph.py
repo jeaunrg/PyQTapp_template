@@ -31,10 +31,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
 
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
-            new_widget = QtWidgets.QLabel(str(result))
-            font = QtGui.QFont()
-            font.setPointSize(40)
-            new_widget.setFont(font)
+            new_widget = self.computeTextWidget(result)
         else:
             new_widget = QtWidgets.QWidget()
 
@@ -43,6 +40,13 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         self.result.deleteLater()
         self.result = new_widget
         self.updateHeight(force=True)
+
+    def computeTextWidget(self, data):
+        widget = QtWidgets.QLabel(str(data))
+        font = QtGui.QFont()
+        font.setPointSize(40)
+        widget.setFont(font)
+        return widget
 
 
 class QCustomGraphicsView(QtWidgets.QGraphicsView):
@@ -282,13 +286,13 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         else:
             max_x_parent = parents[0]
             for parent in parents:
-                self.bind(parent, node)
                 if parent.pos().x() > max_x_parent.pos().x():
                     max_x_parent = parent
+                self.bind(parent, node)
                 parent.childs.append(node)
             Ys = [c.pos().y() + c.height() for c in max_x_parent.childs if c is not node]
-            x = max_x_parent.pos().x() + max_x_parent.width() + DEFAULT['node_space'][0]
-            y = max_x_parent.pos().y() if not Ys else max(Ys) + DEFAULT['node_space'][1]
+            x = max_x_parent.pos().x() + max_x_parent.width() + DEFAULT['space_between_nodes'][0]
+            y = max_x_parent.pos().y() if not Ys else max(Ys) + DEFAULT['space_between_nodes'][1]
 
         node.moveBy(x, y)
         self.nodes[name] = node
