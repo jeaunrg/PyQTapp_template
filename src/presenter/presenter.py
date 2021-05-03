@@ -78,7 +78,8 @@ class Presenter():
             module.lefthead.setPixmap(self._view._fail)
         else:
             module.lefthead.setPixmap(self._view._valid)
-        module.updateResult()
+
+        module.updateResult(output)
 
         # stop loading if one process is still running (if click multiple time
         # on the same button)

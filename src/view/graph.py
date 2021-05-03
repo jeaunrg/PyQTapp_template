@@ -1,8 +1,9 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from src.view import ui, utils
-from src import RESULT_STACK, DESIGN_DIR, DEFAULT
+from src import DESIGN_DIR, DEFAULT
 import copy
 import os
+import pandas as pd
 
 
 class QCustomGraphicsNode(ui.QGraphicsNode):
@@ -36,12 +37,14 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
             self.parameters.hide()
         self.updateHeight(True)
 
-    def updateResult(self):
-        result = RESULT_STACK.get(self.name)
-
+    def updateResult(self, result):
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
             new_widget = self.computeTextWidget(result)
+        elif isinstance(result, pd.DataFrame):
+            new_widget = self.computeTableWidget(result)
+        elif isinstance(result, ui.PandasModel):
+            new_widget = self.computeTableWidget(pandaModel=result)
         else:
             new_widget = QtWidgets.QWidget()
             self.updateHeight(True)
@@ -77,7 +80,22 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
                 self._font.setPointSize(fontsize)
                 self.result.setFont(self._font)
         self.sizeChanged.connect(fitFontSize)
+        return widget
 
+    def computeTableWidget(self, data):
+        widget = uic.loadUi(os.path.join(DESIGN_DIR, 'ui', 'TableWidget.ui'))
+        widget.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
+        widget.table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        widget.Vheader.addItems(['--'] + list(data.columns.astype(str)))
+
+        def updateVheader(index):
+            model = ui.PandasModel(data, index-1)
+            proxyModel = QtCore.QSortFilterProxyModel()
+            proxyModel.setSourceModel(model)
+            widget.table.setModel(proxyModel)
+
+        widget.Vheader.currentIndexChanged.connect(updateVheader)
+        updateVheader(0)
         return widget
 
 

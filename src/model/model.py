@@ -1,6 +1,7 @@
 import time
-import random
 from src.model.utils import protector
+import pandas as pd
+import numpy as np
 
 
 class Model():
@@ -12,4 +13,8 @@ class Model():
         time.sleep(sleep_time)
         if insert_error:
             raise ValueError("ceci est une erreur test")
-        return random.randint(minimum, maximum)
+        size = (100, 100)
+        df = pd.DataFrame(index=np.arange(0, size[0]),
+                          columns=np.arange(0, size[1]),
+                          data=np.random.rand(*size)*10)
+        return df

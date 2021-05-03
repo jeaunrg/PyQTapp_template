@@ -149,3 +149,20 @@ QProgressBar {
 QProgressBar::chunk {
     background-color: qlineargradient(spread:pad, x1:0, x2:1, stop:0 transparent, stop:0.5 %(feature_color)s, stop:1 transparent);
 }
+
+QHeaderView::section{
+    border-top:0px solid black;
+    border-left:0px solid black;
+    border-right:1px solid black;
+    border-bottom: 1px solid black;
+    background-color:white;
+    padding:4px;
+}
+
+QTableCornerButton::section{
+    border-top:0px solid black;
+    border-left:0px solid black;
+    border-right:1px solid black;
+    border-bottom: 1px solid black;
+    background-color:white;
+}

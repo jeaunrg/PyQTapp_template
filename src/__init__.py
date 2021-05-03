@@ -9,6 +9,7 @@ IMG_DIR = os.path.join(RESOURCE_DIR, "images")
 DESIGN_DIR = os.path.join(MAIN_DIR, "resources", "design")
 CONFIG_DIR = os.path.join(MAIN_DIR, "config")
 
+# true results
 RESULT_STACK = {}
 
 with open(os.path.join(CONFIG_DIR, "default.json"), "r") as f:

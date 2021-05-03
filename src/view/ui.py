@@ -350,3 +350,36 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
             self.setPolygon(QtGui.QPolygonF([p11, p21, p23, p2, p24, p22, p12, p11]))
         else:
             self.setPolygon(QtGui.QPolygonF())
+
+
+class PandasModel(QtCore.QAbstractTableModel):
+    """
+    Class to populate a table view with a pandas dataframe
+    """
+    def __init__(self, df, header_index=-1, parent=None):
+        QtCore.QAbstractTableModel.__init__(self, parent)
+        if header_index == -1:
+            self._data = df
+        else:
+            header_colname = df.columns[header_index]
+            self._data = df.set_index(header_colname)
+
+    def format(self, value):
+        return '' if np.isnan(value) else str(value)
+
+    def rowCount(self, parent=None):
+        return self._data.shape[0]
+
+    def columnCount(self, parent=None):
+        return self._data.shape[1]
+
+    def data(self, index, role):
+        if index.isValid():
+            if role == QtCore.Qt.DisplayRole:
+                return self.format(self._data.iloc[index.row(), index.column()])
+
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self.format(self._data.columns[col])
+        elif orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
+            return self.format(self._data.index[col])
