@@ -2,6 +2,7 @@ import time
 import random
 from src.model.utils import protector
 
+
 class Model():
     @protector
     def function1(self, minimum=0, maximum=100, sleep_time=2, insert_error=False):

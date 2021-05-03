@@ -1,0 +1,15 @@
+{
+    "module1": {
+        "type": "primary",
+        "function": "call_function1"
+    },
+    "module2": {
+        "type": "secondary"
+    },
+    "rename": {
+        "type": "secondary"
+    },
+    "delete": {
+        "type": "secondary"
+    }
+}

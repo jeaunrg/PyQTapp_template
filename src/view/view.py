@@ -1,5 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from src import DESIGN_DIR, DEFAULT
+from src.view import graph, utils
 import json
 import os
 
@@ -13,6 +14,10 @@ class View(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
         uic.loadUi(os.path.join(DESIGN_DIR, "ui", "MainView.ui"), self)
+        if DEFAULT['window_size'] == 'fullscreen':
+            self.showMaximized()
+        else:
+            self.resize(*DEFAULT['window_size'])
         self.modules = {}
         self.initStyle()
         self.initUI()
@@ -23,9 +28,9 @@ class View(QtWidgets.QMainWindow):
         """
         # initialize icons
         self._fail = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "fail.png"))
-        self._fail = self._fail.scaled(20, 20, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        self._fail = self._fail.scaled(15, 15, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self._valid = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "valid.png"))
-        self._valid = self._valid.scaled(20, 20, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        self._valid = self._valid.scaled(15, 15, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
 
         # create menu and actions for stylesheet and themes
         self.theme, self.style = None, None
@@ -66,7 +71,21 @@ class View(QtWidgets.QMainWindow):
         """
         This method init widgets UI for the main window
         """
-        return
+        self.graph = graph.QCustomGraphicsView(self, 'horizontal')
+        self.setCentralWidget(self.graph)
+
+    def initMenu(self, modules):
+        """
+        create right-clic menu from modules
+        """
+        # initalize right-clic-menu
+        self.menu = {}
+        for k, values in modules.items():
+            lst = [values['type']]
+            if 'menu' in values:
+                lst += values['menu'].split('/')
+            lst.append(k)
+            utils.dict_from_list(self.menu, lst)
 
     def addModule(self, moduleName):
         """

@@ -1,4 +1,8 @@
 from src.presenter.utils import view_manager
+from src import CONFIG_DIR
+import json
+import os
+from src import RESULT_STACK
 
 
 class Presenter():
@@ -20,10 +24,11 @@ class Presenter():
 
     # ------------------------------ CONNECTIONS ------------------------------#
     def init_view_connections(self):
-        self._view.add.clicked.connect(lambda: (self._view.addModule("module1"),
-                                                self.init_module_connections("module1")))
+        self.modules = json.load(open(os.path.join(CONFIG_DIR, "modules.json"), "rb"))
+        self._view.initMenu(self.modules)
+        self._view.graph.nodeAdded.connect(lambda m: self.init_module_connections(m))
 
-    def init_module_connections(self, module_name):
+    def init_module_connections(self, module):
         """
         initialize module parameters if necessary
         create connections between view widgets and functions
@@ -34,15 +39,17 @@ class Presenter():
             name of the loaded module
 
         """
-        module = self._view.modules[module_name]
+        parameters = self.modules[module.type]
         module._runners = []
 
-        # do connections
-        if module_name == "module1":
-            module.button.clicked.connect(lambda: self.call_function1(module))
+        if 'function' in parameters:
+            activation_function = eval('self.'+parameters['function'])
+            module.parameters.apply.clicked.connect(lambda: activation_function(module))
+
+        # do custom connections
+        # ...
 
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
-
     def prior_to_function(self, module):
         """
         This method is called by the view_manager before of the function call
@@ -52,8 +59,8 @@ class Presenter():
         module: QWidget
         """
         module.loading.setMaximum(0)  # activate eternal loading
-        module.state.clear()
-        module.setToolTip(None)
+        module.lefthead.clear()
+        module.lefthead.setToolTip(None)
 
     def post_function(self, module, output):
         """
@@ -65,14 +72,13 @@ class Presenter():
         module: QWidget
         output: exception, str, pd.DataFrame, np.array, ...
         """
-
+        RESULT_STACK[module.name] = output
         if isinstance(output, Exception):
-            module.state.setToolTip("[{0}] {1}".format(type(output).__name__, output))
-            module.state.setPixmap(self._view._fail)
+            module.lefthead.setToolTip("[{0}] {1}".format(type(output).__name__, output))
+            module.lefthead.setPixmap(self._view._fail)
         else:
-            if isinstance(output, int):
-                module.result.setText(str(output))
-            module.state.setPixmap(self._view._valid)
+            module.lefthead.setPixmap(self._view._valid)
+        module.updateResult()
 
         # stop loading if one process is still running (if click multiple time
         # on the same button)
@@ -85,10 +91,10 @@ class Presenter():
     def call_function1(self, module):
         # set model inputs
         function = self._model.function1
-        args = {"minimum": module.minimum.value(),
-                "maximum": module.maximum.value(),
-                "sleep_time": module.sleeptime.value(),
-                "insert_error": module.inserterror.isChecked()}
+        args = {"minimum": module.parameters.minimum.value(),
+                "maximum": module.parameters.maximum.value(),
+                "sleep_time": module.parameters.sleeptime.value(),
+                "insert_error": module.parameters.inserterror.isChecked()}
 
         # the view manager decorator will handle the function and its arguments
         return function, args
