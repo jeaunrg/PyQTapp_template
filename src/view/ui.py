@@ -16,7 +16,7 @@ class QGrap(QtWidgets.QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.installEventFilter(self)
 
     def eventFilter(self, obj, event):
@@ -49,7 +49,6 @@ class QViewWidget(QtWidgets.QWidget):
         header.addWidget(self.selected)
         header.addWidget(self.lefthead)
         header.addWidget(self.grap)
-        self.grap.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         header.setAlignment(QtCore.Qt.AlignLeft)
 
         # create left and right footer

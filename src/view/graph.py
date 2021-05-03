@@ -7,6 +7,7 @@ import os
 
 
 class QCustomGraphicsNode(ui.QGraphicsNode):
+    resultDeleted = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
@@ -29,6 +30,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
 
     def updateResult(self):
         result = RESULT_STACK.get(self.name)
+        self.resultDeleted.emit()
 
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
@@ -53,11 +55,28 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
             self.resize(self.width(), 0)
 
     def computeTextWidget(self, data):
+        default_fontsize = 30
+
         widget = QtWidgets.QLabel(str(data))
+        widget.setAlignment(QtCore.Qt.AlignCenter)
+        widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+
         font = QtGui.QFont()
-        font.setPointSize(20)
+        font.setPointSize(default_fontsize)
         widget.setFont(font)
-        widget.setFixedSize(40, 40)
+
+        # update fontsize to fit widget size
+        metric = QtGui.QFontMetrics(font)
+        ratio = metric.boundingRect(str(data)).size() / default_fontsize
+
+        def updateFontSize():
+            fontsize = max([min([self.result.width() / ratio.width(),
+                                 self.result.height() / ratio.height()]) - 2, 10])
+            font.setPointSize(fontsize)
+            widget.setFont(font)
+        self.sizeChanged.connect(updateFontSize)
+        self.resultDeleted.connect(lambda: self.sizeChanged.disconnect(updateFontSize))
+
         return widget
 
     def computeTableWidget(self, data):
@@ -65,6 +84,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         widget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         widget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         widget.setModel(ui.PandasModel(data))
+        widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         return widget
 
 

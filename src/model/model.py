@@ -16,4 +16,4 @@ class Model():
         df = pd.DataFrame()
         df.loc['a', 1] = random.randint(minimum, maximum)
         df.loc['b', 2] = random.randint(minimum, maximum)
-        return df
+        return 68
