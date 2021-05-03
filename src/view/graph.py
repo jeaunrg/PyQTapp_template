@@ -42,13 +42,12 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
             new_widget = self.computeTextWidget(result)
-            self.vbox.setStretchFactor(self.result, 100)
         else:
             new_widget = QtWidgets.QWidget()
-            self.vbox.setStretchFactor(self.result, 100)
             self.updateHeight(True)
 
         # replace current output widget with the new one
+        self.vbox.setStretchFactor(self.result, 100)
         self.vbox.replaceWidget(self.result, new_widget)
         self.result.deleteLater()
         self.result = new_widget
