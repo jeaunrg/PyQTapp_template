@@ -49,7 +49,7 @@ class QViewWidget(QtWidgets.QWidget):
         header.addWidget(self.selected)
         header.addWidget(self.lefthead)
         header.addWidget(self.grap)
-        header.setAlignment(QtCore.Qt.AlignLeft)
+        header.setAlignment(QtCore.Qt.AlignTop)
 
         # create left and right footer
         footer = QtWidgets.QHBoxLayout()
@@ -73,6 +73,10 @@ class QViewWidget(QtWidgets.QWidget):
         vbox.addWidget(self.centralWidget)
         vbox.addLayout(footer)
         self.setLayout(vbox)
+
+        vbox.setStretchFactor(header, 0)
+        vbox.setStretchFactor(self.centralWidget, 1)
+        vbox.setStretchFactor(footer, 0)
 
         # create proxy and item to interact with widget
         self._item = self.QCustomRectItem(self)
@@ -139,6 +143,7 @@ class QViewWidget(QtWidgets.QWidget):
         self.__dict__.update(widget.__dict__)
         self.centralWidget.deleteLater()
         self.centralWidget = widget
+        self.layout().setStretchFactor(self.centralWidget, 1)
 
     def addToScene(self, scene):
         self.sizeChanged.connect(lambda: self._item.setRect(QtCore.QRectF(self.geometry().adjusted(0, 0, 0, 0))))
@@ -172,10 +177,13 @@ class QGraphicsNode(ui.QViewWidget):
         self.type = type
         self.name = name
         self.button.setText(name)
-        self.state = None
+        self.vbox.setStretchFactor(self.button, 1)
+        self.vbox.setStretchFactor(self.parameters, 10)
+        self.vbox.setStretchFactor(self.result, 0)
 
-        self.sizeChanged.connect(self.updateHeight)
+        self.state = None
         self.focused.connect(self.focusNode)
+        self.sizeChanged.connect(self.updateHeight)
         self.selected.stateChanged.connect(self.changeChildSelection)
         self.selected.stateChanged.connect(self._item.setSelected)
         self.positionChanged.connect(self.moveSelection)
@@ -202,10 +210,6 @@ class QGraphicsNode(ui.QViewWidget):
         """
         resize widget to its minimum height
         """
-        if force:
-            width = self.width()
-            self.adjustSize()
-            self.resize(width, self.minimumHeight()+1)
         self.resize(self.width(), 0)
 
     @property
@@ -250,6 +254,7 @@ class QGraphicsNode(ui.QViewWidget):
         self.vbox.replaceWidget(self.parameters, new_widget)
         self.parameters.deleteLater()
         self.parameters = new_widget
+        self.vbox.setStretchFactor(self.parameters, 10)
 
 
 class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):

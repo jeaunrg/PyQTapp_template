@@ -18,6 +18,17 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         self.setParametersWidget(uifile_path)
         self.parameters.hide()
 
+        # initialize
+        self._font = None
+
+    def updateHeight(self, force=False):
+        if self.result.sizeHint() == QtCore.QSize(-1, -1):
+            if force:
+                width = self.width()
+                self.adjustSize()
+                self.resize(width, self.minimumHeight()+1)
+            self.resize(self.width(), 0)
+
     def hideShowParameters(self):
         if self.parameters.isHidden():
             self.parameters.show()
@@ -31,45 +42,43 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
             new_widget = self.computeTextWidget(result)
+            self.vbox.setStretchFactor(self.result, 100)
         else:
             new_widget = QtWidgets.QWidget()
+            self.vbox.setStretchFactor(self.result, 100)
+            self.updateHeight(True)
 
         # replace current output widget with the new one
         self.vbox.replaceWidget(self.result, new_widget)
         self.result.deleteLater()
         self.result = new_widget
-        self.updateHeight(True)
-
-    def updateHeight(self, force=False):
-        if self.result.sizeHint() == QtCore.QSize(-1, -1):
-            if force:
-                width = self.width()
-                self.adjustSize()
-                self.resize(width, self.minimumHeight()+1)
-            self.resize(self.width(), 0)
 
     def computeTextWidget(self, data):
         default_fontsize = 30
+        min_fontsize = 10
 
+        # set font
+        if self._font is None:
+            self._font = QtGui.QFont()
+            self._font.setPointSize(default_fontsize)
+
+        # set widget
         widget = QtWidgets.QLabel(str(data))
         widget.setAlignment(QtCore.Qt.AlignCenter)
-        widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-
-        font = QtGui.QFont()
-        font.setPointSize(default_fontsize)
-        widget.setFont(font)
+        widget.setFont(self._font)
 
         # update fontsize to fit widget size
-        metric = QtGui.QFontMetrics(font)
-        ratio = metric.boundingRect(str(data)).size() / default_fontsize
+        metric = QtGui.QFontMetrics(self._font)
+        ratio = metric.boundingRect(str(data)).size() / self._font.pointSize()
 
         def fitFontSize():
             if isinstance(self.result, QtWidgets.QLabel):
                 fontsize = max([min([self.result.width() / ratio.width(),
-                                     self.result.height() / ratio.height()]) - 10, 10])
-                font.setPointSize(fontsize)
-                self.result.setFont(font)
+                                     self.result.height() / ratio.height()]) - 10, min_fontsize])
+                self._font.setPointSize(fontsize)
+                self.result.setFont(self._font)
         self.sizeChanged.connect(fitFontSize)
+
         return widget
 
 
