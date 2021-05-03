@@ -3,7 +3,7 @@ resources/data/out/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.pyc
+src/view/__pycache__/ui.cpython-38.pyc
 
 *.py[cod]
 *$py.class
