@@ -1,7 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from src.view import ui, utils
 from src import RESULT_STACK, DESIGN_DIR, DEFAULT
-import pandas as pd
 import copy
 import os
 
@@ -32,8 +31,6 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
             new_widget = self.computeTextWidget(result)
-        elif isinstance(result, pd.DataFrame):
-            new_widget = self.computeTableWidget(result)
         else:
             new_widget = QtWidgets.QWidget()
 
