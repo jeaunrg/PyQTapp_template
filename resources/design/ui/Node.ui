@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>236</width>
-    <height>95</height>
+    <width>204</width>
+    <height>118</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -58,10 +58,24 @@
       </widget>
      </item>
      <item>
-      <widget class="QWidget" name="parameters" native="true"/>
+      <widget class="QWidget" name="parameters" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
-     <item alignment="Qt::AlignHCenter|Qt::AlignTop">
-      <widget class="QWidget" name="result" native="true"/>
+     <item>
+      <widget class="QWidget" name="result" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

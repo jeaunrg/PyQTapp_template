@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 from src.view import ui, utils
 from src import RESULT_STACK, DESIGN_DIR, DEFAULT
+import pandas as pd
 import copy
 import os
 
@@ -32,6 +33,8 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
             new_widget = self.computeTextWidget(result)
+        elif isinstance(result, pd.DataFrame):
+            new_widget = self.computeTableWidget(result)
         else:
             new_widget = QtWidgets.QWidget()
 
@@ -41,11 +44,27 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         self.result = new_widget
         self.updateHeight(force=True)
 
+    def updateHeight(self, force=False):
+        if self.result.sizeHint() == QtCore.QSize(-1, -1):
+            if force:
+                width = self.width()
+                self.adjustSize()
+                self.resize(width, self.minimumHeight()+1)
+            self.resize(self.width(), 0)
+
     def computeTextWidget(self, data):
         widget = QtWidgets.QLabel(str(data))
         font = QtGui.QFont()
-        font.setPointSize(40)
+        font.setPointSize(20)
         widget.setFont(font)
+        widget.setFixedSize(40, 40)
+        return widget
+
+    def computeTableWidget(self, data):
+        widget = QtWidgets.QTableView()
+        widget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        widget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        widget.setModel(ui.PandasModel(data))
         return widget
 
 
