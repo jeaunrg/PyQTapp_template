@@ -1,7 +1,6 @@
 import time
 import random
 from src.model.utils import protector
-import pandas as pd
 
 
 class Model():
@@ -13,7 +12,4 @@ class Model():
         time.sleep(sleep_time)
         if insert_error:
             raise ValueError("ceci est une erreur test")
-        df = pd.DataFrame()
-        df.loc['a', 1] = random.randint(minimum, maximum)
-        df.loc['b', 2] = random.randint(minimum, maximum)
-        return 68
+        return random.randint(minimum, maximum)

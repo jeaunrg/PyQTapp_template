@@ -345,37 +345,3 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
             self.setPolygon(QtGui.QPolygonF([p11, p21, p23, p2, p24, p22, p12, p11]))
         else:
             self.setPolygon(QtGui.QPolygonF())
-
-
-class PandasModel(QtCore.QAbstractTableModel):
-    """
-    Class to populate a table view with a pandas dataframe
-    """
-    def __init__(self, df, index=None, parent=None):
-        QtCore.QAbstractTableModel.__init__(self, parent)
-        self._index_col_size, self._header_size = len(df.index.names), len(df.columns.names)
-        self.isIndexed = index in df.columns
-        if self.isIndexed:
-            self._data = df.set_index(index)
-        else:
-            self._data = df
-        self._data = self._data.fillna("").astype(str)
-
-    def rowCount(self, parent=None):
-        return self._data.shape[0]
-
-    def columnCount(self, parent=None):
-        return self._data.shape[1]
-
-    def data(self, index, role):
-        if index.isValid():
-            if role == QtCore.Qt.DisplayRole:
-                return str(self._data.iloc[index.row(), index.column()])
-        return None
-
-    def headerData(self, col, orientation, role):
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return self._data.columns[col]
-        elif self.isIndexed and orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
-            return self._data.index[col]
-        return None

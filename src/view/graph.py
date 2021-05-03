@@ -7,7 +7,6 @@ import os
 
 
 class QCustomGraphicsNode(ui.QGraphicsNode):
-    resultDeleted = QtCore.pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
@@ -25,12 +24,10 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
             self.parameters.show()
         else:
             self.parameters.hide()
-        self.graph._view.update()
-        self.updateHeight(force=True)
+        self.updateHeight(True)
 
     def updateResult(self):
         result = RESULT_STACK.get(self.name)
-        self.resultDeleted.emit()
 
         # create the output widget depending on output type
         if isinstance(result, (int, float, str, bool)):
@@ -44,7 +41,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         self.vbox.replaceWidget(self.result, new_widget)
         self.result.deleteLater()
         self.result = new_widget
-        self.updateHeight(force=True)
+        self.updateHeight(True)
 
     def updateHeight(self, force=False):
         if self.result.sizeHint() == QtCore.QSize(-1, -1):
@@ -69,22 +66,13 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         metric = QtGui.QFontMetrics(font)
         ratio = metric.boundingRect(str(data)).size() / default_fontsize
 
-        def updateFontSize():
-            fontsize = max([min([self.result.width() / ratio.width(),
-                                 self.result.height() / ratio.height()]) - 2, 10])
-            font.setPointSize(fontsize)
-            widget.setFont(font)
-        self.sizeChanged.connect(updateFontSize)
-        self.resultDeleted.connect(lambda: self.sizeChanged.disconnect(updateFontSize))
-
-        return widget
-
-    def computeTableWidget(self, data):
-        widget = QtWidgets.QTableView()
-        widget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        widget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
-        widget.setModel(ui.PandasModel(data))
-        widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        def fitFontSize():
+            if isinstance(self.result, QtWidgets.QLabel):
+                fontsize = max([min([self.result.width() / ratio.width(),
+                                     self.result.height() / ratio.height()]) - 10, 10])
+                font.setPointSize(fontsize)
+                self.result.setFont(font)
+        self.sizeChanged.connect(fitFontSize)
         return widget
 
 
