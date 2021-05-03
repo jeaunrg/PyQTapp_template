@@ -3,6 +3,8 @@ resources/data/out/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+src/view/__pycache__
+
 *.py[cod]
 *$py.class
 
