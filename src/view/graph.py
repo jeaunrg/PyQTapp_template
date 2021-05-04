@@ -16,7 +16,6 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         if not os.path.isfile(uifile_path):
             return print("{} does not exists".format(uifile_path))
         self.setParametersWidget(uifile_path)
-        self.parameters.hide()
 
         # initialize
         self._font = None
@@ -32,7 +31,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         force: bool, default=False
             if True, use a trick to force resize in extreme cases
         """
-        if self.result.isHidden() or self.result.parent() is None or self.result.sizeHint() == QtCore.QSize(-1, -1):
+        if self.widget.isHidden() or self.result.isHidden() or self.result.sizeHint() == QtCore.QSize(-1, -1):
             if force:
                 width = self.width()
                 self.adjustSize()
@@ -62,8 +61,8 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
             self.hideResult.show()
 
         # replace current output widget with the new one
-        self.vbox.setStretchFactor(self.result, 100)
-        self.vbox.replaceWidget(self.result, new_widget)
+        self.widget.layout().setStretchFactor(self.result, 10)
+        self.widget.layout().replaceWidget(self.result, new_widget)
         self.result.deleteLater()
         self.result = new_widget
 
@@ -133,18 +132,15 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         updateVheader(0)
 
         def windowing():
-            if widget.parent() is None:
-                self.vbox.addWidget(widget)
-                self.vbox.setStretchFactor(widget, 100)
-            else:
-                widget.setParent(None)
-                widget.show()
-                widget.setWindowTitle(self.name)
-                widget.resize(*DEFAULT['tablewindow_size'])
-                self.updateHeight(True)
-        widget.windowed.clicked.connect(windowing)
+            win = QtWidgets.QMainWindow(self.graph._view)
+            win.setWindowTitle(self.name)
+            win.setCentralWidget(self.computeTableWidget(data))
+            win.resize(*DEFAULT['tablewindow_size'])
+            win.show()
 
+        widget.windowed.clicked.connect(windowing)
         self.leftfoot.setText("{0} x {1}    ({2} {3})".format(*data.shape, *utils.getMemoryUsage(data)))
+
         return widget
 
 

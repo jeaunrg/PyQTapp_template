@@ -73,6 +73,7 @@ class View(QtWidgets.QMainWindow):
         """
         self.graph = graph.QCustomGraphicsView(self, 'horizontal')
         self.setCentralWidget(self.graph)
+        self.setWindowState(QtCore.Qt.WindowActive)
 
     def initMenu(self, modules):
         """

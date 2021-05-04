@@ -177,12 +177,13 @@ class QGraphicsNode(ui.QViewWidget):
         self.type = type
         self.name = name
         self.button.setText(name)
-        self.vbox.setStretchFactor(self.button, 1)
-        self.vbox.setStretchFactor(self.parameters, 10)
-        self.vbox.setStretchFactor(self.result, 0)
+        self.vbox.setStretchFactor(self.button, 0)
+        self.vbox.setStretchFactor(self.parameters, 1)
+        self.vbox.setStretchFactor(self.result, 10)
 
-        self.button.clicked.connect(lambda: self.hideShowWidget(self.parameters))
-        self.hideResult.clicked.connect(lambda: self.hideShowWidget(self.result))
+        self.button.clicked.connect(lambda: self.hideShowWidget(self.widget))
+        self.hideResult.clicked.connect(lambda: self.hideShowWidget(self.result, self.hideResult))
+        self.hideParameters.clicked.connect(lambda: self.hideShowWidget(self.parameters, self.hideParameters))
         self.hideResult.hide()
 
         self.state = None
@@ -197,9 +198,13 @@ class QGraphicsNode(ui.QViewWidget):
         self.links = []
         self.initialPosition = None
 
-    def hideShowWidget(self, widget):
+    def hideShowWidget(self, widget, button=None):
         widget.show() if widget.isHidden() else widget.hide()
         self.updateHeight(True)
+
+        if button is not None:
+            new_text = '+' + button.text()[1:] if widget.isHidden() else '-' + button.text()[1:]
+            button.setText(new_text)
 
     def moveSelection(self):
         if self is self.graph.focus:
@@ -259,10 +264,10 @@ class QGraphicsNode(ui.QViewWidget):
 
     def setParametersWidget(self, ui_file):
         new_widget = uic.loadUi(ui_file)
-        self.vbox.replaceWidget(self.parameters, new_widget)
+        self.widget.layout().replaceWidget(self.parameters, new_widget)
         self.parameters.deleteLater()
         self.parameters = new_widget
-        self.vbox.setStretchFactor(self.parameters, 10)
+        self.vbox.setStretchFactor(self.parameters, 1)
 
 
 class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
@@ -391,3 +396,9 @@ class PandasModel(QtCore.QAbstractTableModel):
             return self.format(self._data.columns[col])
         elif orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
             return self.format(self._data.index[col])
+
+
+class SecondaryWindow(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        QtWidgets.QMainWindow.__init__(self, parent)
+        self.parent = parent
