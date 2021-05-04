@@ -181,6 +181,10 @@ class QGraphicsNode(ui.QViewWidget):
         self.vbox.setStretchFactor(self.parameters, 10)
         self.vbox.setStretchFactor(self.result, 0)
 
+        self.button.clicked.connect(lambda: self.hideShowWidget(self.parameters))
+        self.hideResult.clicked.connect(lambda: self.hideShowWidget(self.result))
+        self.hideResult.hide()
+
         self.state = None
         self.focused.connect(self.focusNode)
         self.sizeChanged.connect(self.updateHeight)
@@ -192,6 +196,10 @@ class QGraphicsNode(ui.QViewWidget):
         self.parents = parents
         self.links = []
         self.initialPosition = None
+
+    def hideShowWidget(self, widget):
+        widget.show() if widget.isHidden() else widget.hide()
+        self.updateHeight(True)
 
     def moveSelection(self):
         if self is self.graph.focus:

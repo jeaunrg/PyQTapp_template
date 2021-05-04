@@ -10,7 +10,6 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
 
     def __init__(self, *args, **kwargs):
         super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
-        self.button.clicked.connect(self.hideShowParameters)
 
         # add parameters widget
         uifile_path = os.path.join(DESIGN_DIR, 'ui', self.type+'.ui')
@@ -21,33 +20,30 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
 
         # initialize
         self._font = None
+        self.skip_height_update = False
 
     def updateHeight(self, force=False):
-        if self.result.sizeHint() == QtCore.QSize(-1, -1):
+        if self.result.isHidden() or self.result.parent() is None or self.result.sizeHint() == QtCore.QSize(-1, -1):
             if force:
                 width = self.width()
                 self.adjustSize()
                 self.resize(width, self.minimumHeight()+1)
             self.resize(self.width(), 0)
 
-    def hideShowParameters(self):
-        if self.parameters.isHidden():
-            self.parameters.show()
-        else:
-            self.parameters.hide()
-        self.updateHeight(True)
-
     def updateResult(self, result):
         # create the output widget depending on output type
-        if isinstance(result, (int, float, str, bool)):
-            new_widget = self.computeTextWidget(result)
-        elif isinstance(result, pd.DataFrame):
-            new_widget = self.computeTableWidget(result)
-        elif isinstance(result, ui.PandasModel):
-            new_widget = self.computeTableWidget(pandaModel=result)
-        else:
+        if isinstance(result, Exception):
             new_widget = QtWidgets.QWidget()
             self.updateHeight(True)
+            self.hideResult.hide()
+        else:
+            if isinstance(result, (int, float, str, bool)):
+                new_widget = self.computeTextWidget(result)
+            elif isinstance(result, pd.DataFrame):
+                new_widget = self.computeTableWidget(result)
+                # self.computeTableWidget(result, True).show()
+                # return
+            self.hideResult.show()
 
         # replace current output widget with the new one
         self.vbox.setStretchFactor(self.result, 100)
@@ -93,9 +89,20 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
             proxyModel = QtCore.QSortFilterProxyModel()
             proxyModel.setSourceModel(model)
             widget.table.setModel(proxyModel)
-
         widget.Vheader.currentIndexChanged.connect(updateVheader)
         updateVheader(0)
+
+        def windowing(state):
+            if state:
+                widget.setParent(None)
+                widget.show()
+                widget.setWindowTitle(self.name)
+                widget.resize(*DEFAULT['tablewindow_size'])
+                self.updateHeight(True)
+            else:
+                self.vbox.addWidget(widget)
+                self.vbox.setStretchFactor(widget, 100)
+        widget.windowed.stateChanged.connect(windowing)
         return widget
 
 
