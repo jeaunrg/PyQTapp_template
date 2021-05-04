@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from src.view import ui, utils
-from src import DESIGN_DIR, DEFAULT
+from src import DESIGN_DIR, DEFAULT, RESULT_STACK
 import copy
 import os
 import pandas as pd
@@ -23,6 +23,15 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         self.skip_height_update = False
 
     def updateHeight(self, force=False):
+        """
+        This function set the height of the widget to its minimum if the
+        result is not shown
+
+        Parameters
+        ----------
+        force: bool, default=False
+            if True, use a trick to force resize in extreme cases
+        """
         if self.result.isHidden() or self.result.parent() is None or self.result.sizeHint() == QtCore.QSize(-1, -1):
             if force:
                 width = self.width()
@@ -31,6 +40,15 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
             self.resize(self.width(), 0)
 
     def updateResult(self, result):
+        """
+        This function create widget from result and show it. The created widget
+        depends on the result type
+
+        Parameters
+        ----------
+        result: any type data
+
+        """
         # create the output widget depending on output type
         if isinstance(result, Exception):
             new_widget = QtWidgets.QWidget()
@@ -41,8 +59,6 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
                 new_widget = self.computeTextWidget(result)
             elif isinstance(result, pd.DataFrame):
                 new_widget = self.computeTableWidget(result)
-                # self.computeTableWidget(result, True).show()
-                # return
             self.hideResult.show()
 
         # replace current output widget with the new one
@@ -52,6 +68,19 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         self.result = new_widget
 
     def computeTextWidget(self, data):
+        """
+        This function create a QLabel widget with resizable font based on the
+        widget size
+
+        Parameters
+        ----------
+        data: float, int, str, bool
+
+        Return
+        ------
+        widget: QLabel
+
+        """
         default_fontsize = 30
         min_fontsize = 10
 
@@ -79,9 +108,20 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         return widget
 
     def computeTableWidget(self, data):
+        """
+        This function create a table widget which can be windowed
+
+        Parameters
+        ----------
+        data: pd.DataFrame
+
+        Return
+        ------
+        widget: QTableWidget
+
+        """
         widget = uic.loadUi(os.path.join(DESIGN_DIR, 'ui', 'TableWidget.ui'))
         widget.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
-        widget.table.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
         widget.Vheader.addItems(['--'] + list(data.columns.astype(str)))
 
         def updateVheader(index):
@@ -92,17 +132,19 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         widget.Vheader.currentIndexChanged.connect(updateVheader)
         updateVheader(0)
 
-        def windowing(state):
-            if state:
+        def windowing():
+            if widget.parent() is None:
+                self.vbox.addWidget(widget)
+                self.vbox.setStretchFactor(widget, 100)
+            else:
                 widget.setParent(None)
                 widget.show()
                 widget.setWindowTitle(self.name)
                 widget.resize(*DEFAULT['tablewindow_size'])
                 self.updateHeight(True)
-            else:
-                self.vbox.addWidget(widget)
-                self.vbox.setStretchFactor(widget, 100)
-        widget.windowed.stateChanged.connect(windowing)
+        widget.windowed.clicked.connect(windowing)
+
+        self.leftfoot.setText("{0} x {1}    ({2} {3})".format(*data.shape, *utils.getMemoryUsage(data)))
         return widget
 
 
@@ -278,6 +320,8 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
             new_name = self.getUniqueName(new_name, exception=node.name)
             self.nodes[new_name] = self.nodes.pop(node.name)
             node.rename(new_name)
+            if node.name in RESULT_STACK:
+                RESULT_STACK[new_name] = RESULT_STACK.pop(node.name)
 
     def deleteBranch(self, parent, childs_only=False):
         """
@@ -290,6 +334,9 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
             if True do not delete the parent node else delete parent and children
 
         """
+        # delete data
+        if parent.name in RESULT_STACK:
+            del RESULT_STACK[parent.name]
         # delete children if has no other parent
         for child in parent.childs:
             child.parents.remove(parent)

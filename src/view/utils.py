@@ -1,4 +1,6 @@
 from PyQt5 import QtWidgets
+import pandas as pd
+import numpy as np
 
 
 def dict_from_list(dict_to_complete, element_list):
@@ -49,3 +51,13 @@ def menu_from_dict(acts, activation_function=None, menu=None):
             submenu = menu.addMenu(a)
             menu_from_dict(subacts, activation_function, submenu)
     return menu
+
+
+def getMemoryUsage(object):
+    memory = 0
+    if isinstance(object, pd.DataFrame):
+        memory = object.memory_usage(deep=True).sum()
+    for i in ['B', 'KB', 'MB', 'GB']:
+        if memory < 1000:
+            return memory, i
+        memory = int(np.round(memory/1000, 0))
