@@ -11,6 +11,8 @@ class View(QtWidgets.QMainWindow):
     and send signals for specific actions
 
     """
+    closed = QtCore.pyqtSignal()
+
     def __init__(self):
         super().__init__()
         uic.loadUi(os.path.join(DESIGN_DIR, "ui", "MainView.ui"), self)
@@ -101,3 +103,38 @@ class View(QtWidgets.QMainWindow):
         self.hbox.addWidget(module)
 
         self.modules[moduleName] = module
+
+    def dockWidget(self, widget):
+        """
+        put widget inside a qdock widget
+
+        Parameters
+        ----------
+        widget: QWidget
+
+        Return
+        ------
+        dock: QDockWidget
+
+        """
+        dock = QtWidgets.QDockWidget()
+        dock.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
+        dock.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
+        docks = self.findChildren(QtWidgets.QDockWidget)
+
+        dock.setWidget(widget)
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+
+        if len(docks) > 1:
+            self.tabifyDockWidget(docks[-1], dock)
+        elif len(docks) > 0:
+            self.splitDockWidget(docks[-1], dock, QtCore.Qt.Horizontal)
+        self.setTabPosition(QtCore.Qt.RightDockWidgetArea, QtWidgets.QTabWidget.South)
+        dock.show()
+        dock.raise_()
+        return dock
+
+    def closeEvent(self, event):
+        self.closed.emit()
+        QtWidgets.QMainWindow.closeEvent(self, event)

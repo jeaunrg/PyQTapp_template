@@ -398,7 +398,6 @@ class PandasModel(QtCore.QAbstractTableModel):
             return self.format(self._data.index[col])
 
 
-class SecondaryWindow(QtWidgets.QMainWindow):
-    def __init__(self, parent=None):
-        QtWidgets.QMainWindow.__init__(self, parent)
-        self.parent = parent
+class QCustomDockWidget(QtWidgets.QDockWidget):
+    def __init__(self, *args, **kwargs):
+        QtWidgets.QDockWidget.__init__(self, *args, **kwargs)

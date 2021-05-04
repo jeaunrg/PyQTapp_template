@@ -131,14 +131,12 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         widget.Vheader.currentIndexChanged.connect(updateVheader)
         updateVheader(0)
 
-        def windowing():
-            win = QtWidgets.QMainWindow(self.graph._view)
-            win.setWindowTitle(self.name)
-            win.setCentralWidget(self.computeTableWidget(data))
-            win.resize(*DEFAULT['tablewindow_size'])
-            win.show()
+        def openInDock():
+            widget = self.computeTableWidget(data)
+            widget.title.setText(self.name)
+            self.graph._view.dockWidget(widget)
 
-        widget.windowed.clicked.connect(windowing)
+        widget.maximize.clicked.connect(openInDock)
         self.leftfoot.setText("{0} x {1}    ({2} {3})".format(*data.shape, *utils.getMemoryUsage(data)))
 
         return widget
