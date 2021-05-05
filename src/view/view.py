@@ -19,6 +19,14 @@ class View(QtWidgets.QMainWindow):
             self.showMaximized()
         else:
             self.resize(*DEFAULT['window_size'])
+
+        # set short cuts
+        self.save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+S'), self)
+        self.save.activated.connect(self.storeSettings)
+
+        self.restore = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'), self)
+        self.restore.activated.connect(self.restoreSettings)
+
         self.modules = {}
         self.initStyle()
         self.initUI()
@@ -61,6 +69,9 @@ class View(QtWidgets.QMainWindow):
             QtWidgets.qApp.setStyleSheet(self.style % self.theme['qss'])
 
     def loadStyle(self, style=DEFAULT['style']):
+        if style is None:
+            return QtWidgets.qApp.setStyleSheet('')
+
         with open(os.path.join(DESIGN_DIR, "qss", style+".qss"), "r") as f:
             self.style = f.read()
         if self.theme is not None:
@@ -72,6 +83,7 @@ class View(QtWidgets.QMainWindow):
         """
         This method init widgets UI for the main window
         """
+        self.settings = {'graph': {}}
         self.graph = graph.QCustomGraphicsView(self, 'horizontal')
         self.setCentralWidget(self.graph)
         self.setWindowState(QtCore.Qt.WindowActive)
@@ -133,6 +145,12 @@ class View(QtWidgets.QMainWindow):
         dock.show()
         dock.raise_()
         return dock
+
+    def storeSettings(self):
+        self.settings['graph'].update(self.graph.getSettings())
+
+    def restoreSettings(self):
+        self.graph.setSettings(self.settings['graph'])
 
     def closeEvent(self, event):
         QtWidgets.QMainWindow.closeEvent(self, event)

@@ -90,7 +90,7 @@ QRadioButton::indicator:unchecked {
 }
 
 QToolTip {
-    color: %(hightext_color)s;
+    color: white;
     background-color: %(feature_color)s;
     border: none;
 }

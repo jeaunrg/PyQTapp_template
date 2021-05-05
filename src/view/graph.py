@@ -17,7 +17,6 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
             print("{} does not exists".format(uifile_path))
         else:
             self.setParametersWidget(uifile_path)
-        self.button.clicked.emit()
 
         # initialize
         self._font = None
@@ -178,7 +177,6 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         self.holdCtrl = False
         self._mouse_position = QtCore.QPoint(0, 0)
         self.nodes = {}
-        self.settings = {}
         self.focus = None
 
     def bind(self, parent, child):
@@ -308,16 +306,18 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         self._mouse_position = self.mapToScene(self.mapFromGlobal(pos))
         menu.exec_(QtGui.QCursor.pos())
 
-    def renameNode(self, node):
+    def renameNode(self, node, new_name=None):
         # open input dialog
-        new_name, valid = QtWidgets.QInputDialog.getText(self, "user input", "new name",
-                                                         QtWidgets.QLineEdit.Normal, node.type)
-        if valid:
-            new_name = self.getUniqueName(new_name, exception=node.name)
-            self.nodes[new_name] = self.nodes.pop(node.name)
-            node.rename(new_name)
-            if node.name in RESULT_STACK:
-                RESULT_STACK[new_name] = RESULT_STACK.pop(node.name)
+        if new_name is None:
+            new_name, valid = QtWidgets.QInputDialog.getText(self, "user input", "new name",
+                                                             QtWidgets.QLineEdit.Normal, node.type)
+            if not valid:
+                return
+        new_name = self.getUniqueName(new_name, exception=node.name)
+        self.nodes[new_name] = self.nodes.pop(node.name)
+        node.rename(new_name)
+        if node.name in RESULT_STACK:
+            RESULT_STACK[new_name] = RESULT_STACK.pop(node.name)
 
     def deleteBranch(self, parent, childs_only=False):
         """
@@ -341,28 +341,11 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         # remove node from parent children
         for p in parent.parents:
             p.childs.remove(parent)
-        # # remove link
-        # parent.positionChanged.disconnect(link.updatePos)
-        # parent.sizeChanged.connect(link.updatePos)
-
         # delete node and links
         parent.delete()
         del self.nodes[parent.name]
 
-    def restoreGraph(self, settings):
-        """
-        restore graph architecture
-
-        Parameters
-        ----------
-        settings: dict
-            the dict-like description of the graph
-
-        """
-        for k, values in settings.items():
-            self.addNode(**values)
-
-    def addNode(self, type, parents=None):
+    def addNode(self, type, parents=None, position=None):
         """
         create a node with specified parent nodes
 
@@ -381,6 +364,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         for i, parent in enumerate(parents):
             if isinstance(parent, str):
                 parents[i] = self.nodes[parent]
+
         name = self.getUniqueName(type)
         node = QCustomGraphicsNode(self, type, name, parents)
         node.addToScene(self.scene)
@@ -398,8 +382,46 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
             x = max_x_parent.pos().x() + max_x_parent.width() + DEFAULT['space_between_nodes'][0]
             y = max_x_parent.pos().y() if not Ys else max(Ys) + DEFAULT['space_between_nodes'][1]
 
+        # set state
+        if position is not None:
+            x, y = position.x(), position.y()
+
         node.moveBy(x, y)
         self.nodes[name] = node
-        self.settings[name] = {'type': type, 'parents': [p.name for p in parents]}
         self.nodeAdded.emit(node)
         return node
+
+    def setSettings(self, settings):
+        """
+        restore graph architecture and node parameters
+
+        Parameters
+        ----------
+        settings: dict
+            the dict-like description of the graph
+
+        """
+        for name, values in settings.items():
+            node = self.addNode(values['state']['type'], values['state']['parents'], values['state']['position'])
+            node.setSettings(values)
+
+    def getSettings(self):
+        """
+        get graph architecture and node parameters
+
+        Return
+        ------
+        settings: dict
+
+        """
+        settings = {}
+        orderedNodes = []
+        nodes = list(self.nodes.values())
+        while nodes:
+            node = nodes.pop(0)
+            if not node.parents or set(node.parents).intersection(orderedNodes):
+                settings[node.name] = node.getSettings()
+                orderedNodes.append(node)
+            else:
+                nodes.append(node)
+        return settings

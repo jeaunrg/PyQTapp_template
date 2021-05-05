@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, uic, QtCore, QtGui
-from src.view import ui
+from src.view import utils
 from src import DESIGN_DIR
 import os
 import numpy as np
@@ -151,7 +151,7 @@ class QViewWidget(QtWidgets.QWidget):
         scene.addItem(self._item)
 
 
-class QGraphicsNode(ui.QViewWidget):
+class QGraphicsNode(QViewWidget):
     """
     movable widget inside the graph associated to a pipeline's step
 
@@ -194,6 +194,8 @@ class QGraphicsNode(ui.QViewWidget):
         self.selected.stateChanged.connect(self._item.setSelected)
         self.positionChanged.connect(self.moveSelection)
 
+        self.loading.setStyleSheet("QProgressBar { max-height: 2px; \
+                                    border-color: transparent; background-color: transparent;}")
         self.childs = []
         self.parents = parents
         self.links = []
@@ -203,7 +205,10 @@ class QGraphicsNode(ui.QViewWidget):
         return [p.name for p in self.parents]
 
     def hideShowWidget(self, widget, button=None):
-        widget.show() if widget.isHidden() else widget.hide()
+        if widget.isHidden():
+            widget.show()
+        else:
+            widget.hide()
         self.updateHeight(True)
 
         if button is not None:
@@ -241,9 +246,6 @@ class QGraphicsNode(ui.QViewWidget):
             link.delete()
             self.graph.scene.removeItem(link)
 
-        #     parent.positionChanged.connect(link.updatePos)
-        # parent.sizeChanged.connect(link.updatePos)
-
         self.graph.scene.removeItem(self._item)
         self._proxy.deleteLater()
         self.deleteLater()
@@ -277,6 +279,36 @@ class QGraphicsNode(ui.QViewWidget):
         self.parameters.deleteLater()
         self.parameters = new_widget
         self.vbox.setStretchFactor(self.parameters, 1)
+
+    def setSettings(self, settings):
+        if settings is None:
+            return
+
+        for name, w in self.parameters.__dict__.items():
+            if name in settings['parameters']:
+                utils.setValue(w, settings['parameters'][name])
+
+        state = settings['state']
+        self.graph.renameNode(self, state['name'])
+
+        if state['hide'][0] and not self.widget.isHidden():
+            self.button.clicked.emit()
+        if state['hide'][1] and not self.parameters.isHidden():
+            self.hideParameters.clicked.emit()
+
+    def getSettings(self):
+        settings = {'parameters': {}}
+        for name, w in self.parameters.__dict__.items():
+            value = utils.getValue(w)
+            if value is not None:
+                settings['parameters'][name] = value
+        settings['state'] = {'name': self.name,
+                             'type': self.type,
+                             'parents': [p.name for p in self.parents],
+                             'position': self.pos(),
+                             'size': self.size(),
+                             'hide':  [self.widget.isHidden(), self.parameters.isHidden()]}
+        return settings
 
 
 class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
@@ -352,6 +384,8 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
         self._parent.positionChanged.disconnect(self.updatePos)
         self._child.sizeChanged.disconnect(self.updatePos)
         self._child.positionChanged.disconnect(self.updatePos)
+        self._parent.links.remove(self)
+        self._child.links.remove(self)
 
     def updatePos(self):
         """
@@ -381,6 +415,24 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
             self.setPolygon(QtGui.QPolygonF([p11, p21, p23, p2, p24, p22, p12, p11]))
         else:
             self.setPolygon(QtGui.QPolygonF())
+
+
+class QFormatLine(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        uic.loadUi(os.path.join(DESIGN_DIR, 'ui', 'modules', 'bricks', 'formatLine.ui'), self)
+
+        self.types.currentIndexChanged.connect(self.hideFormat)
+        self.format.hide()
+
+        self.types.currentIndexChanged.connect(self.hideUnit)
+        self.unit.hide()
+
+    def hideFormat(self):
+        self.format.show() if self.types.currentText() == 'datetime' else self.format.hide()
+
+    def hideUnit(self):
+        self.unit.show() if self.types.currentText() == 'timedelta' else self.unit.hide()
 
 
 class PandasModel(QtCore.QAbstractTableModel):

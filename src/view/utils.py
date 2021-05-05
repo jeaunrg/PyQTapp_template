@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets
 import pandas as pd
 import numpy as np
+from src.view import ui
 
 
 def dict_from_list(dict_to_complete, element_list):
@@ -61,3 +62,27 @@ def getMemoryUsage(object):
         if memory < 1000:
             return memory, i
         memory = int(np.round(memory/1000, 0))
+
+
+def getValue(widget):
+    if isinstance(widget, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
+        return widget.isChecked()
+    elif isinstance(widget, QtWidgets.QLineEdit):
+        return widget.text()
+    elif isinstance(widget, QtWidgets.QComboBox):
+        return widget.currentText()
+    elif isinstance(widget, ui.QFormatLine):
+        return [getValue(widget.types), getValue(widget.format), getValue(widget.unit)]
+
+
+def setValue(widget, value):
+    if isinstance(widget, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
+        widget.setChecked(value)
+    elif isinstance(widget, QtWidgets.QLineEdit):
+        widget.setText(value)
+    elif isinstance(widget, QtWidgets.QComboBox):
+        widget.setCurrentText(value)
+    elif isinstance(widget, ui.QFormatLine):
+        setValue(widget.types, value[0])
+        setValue(widget.format, value[1])
+        setValue(widget.unit, value[2])

@@ -2,9 +2,11 @@ from src.presenter.utils import view_manager, get_data, get_checked
 from src import CONFIG_DIR
 import json
 import os
-from src import RESULT_STACK, DESIGN_DIR, DATA_DIR, OUT_DIR
+from src import RESULT_STACK, DATA_DIR, OUT_DIR
 from src.utils import ceval, empty_to_none
-from PyQt5 import QtWidgets, uic
+from PyQt5 import QtWidgets
+from src.view import ui
+import pandas as pd
 
 
 class Presenter():
@@ -52,22 +54,26 @@ class Presenter():
         except AttributeError as e:
             print(e)
 
-        # do connections
+        self.init_modules_custom_connections(module)
+
+    def init_modules_custom_connections(self, module):
+
         if module.type in ["loadCSV", "SQLrequest"]:
             module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
 
         elif module.type == "save":
-            module.hideResult.hide()
             module.parameters.browse.clicked.connect(lambda: self.browse_savepath(module))
 
         else:
             parent_colnames = [list(get_data(name).columns) for name in
-                               module.get_parent_names() if get_data(name) is not None]
+                               module.get_parent_names() if isinstance(get_data(name), pd.DataFrame)]
             if not parent_colnames:
                 pass
 
             elif module.type == "describe":
+                module.parameters.column.clear()
                 module.parameters.column.addItems([''] + parent_colnames[0])
+                module.parameters.group_by.clear()
                 module.parameters.group_by.addItems([''] + parent_colnames[0])
 
             elif module.type == "select":
@@ -75,8 +81,11 @@ class Presenter():
 
             elif module.type == "merge":
                 flatten_colnames = sum(parent_colnames, [])
+                module.parameters.on.clear()
                 module.parameters.on.addItems(flatten_colnames)
+                module.parameters.left_on.clear()
                 module.parameters.left_on.addItems(['']+flatten_colnames)
+                module.parameters.right_on.clear()
                 module.parameters.right_on.addItems(['']+flatten_colnames)
 
             elif module.type == "operation":
@@ -102,27 +111,18 @@ class Presenter():
                     connectButton(button)
 
             elif module.type == "standardize":
-                dtypes = get_data(module.get_parent_names()[0]).dtypes.to_dict()
+                # dtypes = get_data(module.get_parent_names()[0]).dtypes.to_dict()
+                for i in range(module.parameters.form.rowCount()):
+                    module.parameters.form.removeRow(0)
+                for i, colname in enumerate(parent_colnames[0]):
+                    line = ui.QFormatLine()
+                    module.parameters.form.addRow(QtWidgets.QLabel(colname), line)
+                    module.parameters.__dict__['format_line_{}'.format(i)] = line
 
-                def createTypeLine():
-                    line = uic.loadUi(os.path.join(DESIGN_DIR, 'ui', 'modules', 'bricks', 'formatLine.ui'))
-
-                    def hideFormat():
-                        line.format.show() if line.types.currentText() == 'datetime' else line.format.hide()
-                    line.types.currentIndexChanged.connect(hideFormat)
-                    line.format.hide()
-
-                    def hideUnit():
-                        line.unit.show() if line.types.currentText() == 'timedelta' else line.unit.hide()
-                    line.types.currentIndexChanged.connect(hideUnit)
-                    line.unit.hide()
-
-                    return line
-
-                for i, colname in enumerate(dtypes):
-                    module.parameters.form.addRow(QtWidgets.QLabel(colname), createTypeLine())
+        module.setSettings(self._view.settings['graph'].get(module.name))
 
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
+
     def prior_to_function(self, module):
         """
         This method is called by the view_manager before of the function call
@@ -153,6 +153,8 @@ class Presenter():
             module.lefthead.setPixmap(self._view._valid)
 
         module.updateResult(output)
+        for child in module.childs:
+            self.init_modules_custom_connections(child)
 
         # stop loading if one process is still running (if click multiple time
         # on the same button)
@@ -187,13 +189,18 @@ class Presenter():
     # ----------------------------- MODEL CALL --------------------------------#
     @view_manager(True)
     def call_load_data(self, module):
-        separator = module.parameters.separator.text()
+        separator = module.parameters.separator.currentText()
+        if separator == "{tabulation}":
+            separator = '\t'
+        elif separator == '{espace}':
+            separator = ' '
+
         function = self._model.load_data
         args = {"path": module.parameters.path.text(),
-                "separator": '\t' if separator == '\\t' else separator,
-                "decimal": module.parameters.decimal.text(),
+                "separator": separator,
+                "decimal": module.parameters.decimal.currentText(),
                 "header": ceval(module.parameters.header.text()),
-                "encoding": module.parameters.encoding.text(),
+                "encoding": module.parameters.encoding.currentText(),
                 "clean": module.parameters.clean.isChecked(),
                 "sort": module.parameters.sort.isChecked()}
         return function, args
