@@ -186,6 +186,7 @@ class QGraphicsNode(ui.QViewWidget):
         self.hideParameters.clicked.connect(lambda: self.hideShowWidget(self.parameters, self.hideParameters))
         self.hideResult.hide()
 
+        self.button.mouseDoubleClickEvent = self._mouseDoubleClickEvent
         self.state = None
         self.focused.connect(self.focusNode)
         self.sizeChanged.connect(self.updateHeight)
@@ -224,6 +225,9 @@ class QGraphicsNode(ui.QViewWidget):
         resize widget to its minimum height
         """
         self.resize(self.width(), 0)
+
+    def _mouseDoubleClickEvent(self, event):
+        self.graph.renameNode(self)
 
     @property
     def mid_pos(self):
@@ -396,8 +400,3 @@ class PandasModel(QtCore.QAbstractTableModel):
             return self.format(self._data.columns[col])
         elif orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
             return self.format(self._data.index[col])
-
-
-class QCustomDockWidget(QtWidgets.QDockWidget):
-    def __init__(self, *args, **kwargs):
-        QtWidgets.QDockWidget.__init__(self, *args, **kwargs)

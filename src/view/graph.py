@@ -14,12 +14,13 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         # add parameters widget
         uifile_path = os.path.join(DESIGN_DIR, 'ui', self.type+'.ui')
         if not os.path.isfile(uifile_path):
-            return print("{} does not exists".format(uifile_path))
-        self.setParametersWidget(uifile_path)
+            print("{} does not exists".format(uifile_path))
+        else:
+            self.setParametersWidget(uifile_path)
+        self.button.clicked.emit()
 
         # initialize
         self._font = None
-        self.skip_height_update = False
 
     def updateHeight(self, force=False):
         """
@@ -133,8 +134,8 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
 
         def openInDock():
             widget = self.computeTableWidget(data)
-            widget.title.setText(self.name)
-            self.graph._view.dockWidget(widget)
+            dock = self.graph._view.addWidgetInDock(widget)
+            dock.setWindowTitle(self.name)
 
         widget.maximize.clicked.connect(openInDock)
         self.leftfoot.setText("{0} x {1}    ({2} {3})".format(*data.shape, *utils.getMemoryUsage(data)))
@@ -294,9 +295,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
 
         def activate(action):
             type = action.text()
-            if type == "rename":
-                self.renameNode(node)
-            elif type in ["delete", "delete all"]:
+            if type in ["delete", "delete all"]:
                 self.deleteBranch(node)
             else:
                 self.addNode(action.text(), nodes)

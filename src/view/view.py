@@ -104,7 +104,7 @@ class View(QtWidgets.QMainWindow):
 
         self.modules[moduleName] = module
 
-    def dockWidget(self, widget):
+    def addWidgetInDock(self, widget):
         """
         put widget inside a qdock widget
 

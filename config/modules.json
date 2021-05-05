@@ -6,9 +6,6 @@
     "module2": {
         "type": "secondary"
     },
-    "rename": {
-        "type": "secondary"
-    },
     "delete": {
         "type": "secondary"
     }
