@@ -186,7 +186,7 @@ class QGraphicsNode(ui.QViewWidget):
         self.hideParameters.clicked.connect(lambda: self.hideShowWidget(self.parameters, self.hideParameters))
         self.hideResult.hide()
 
-        self.button.mouseDoubleClickEvent = self._mouseDoubleClickEvent
+        self.button.mouseDoubleClickEvent = lambda e: self.graph.renameNode(self)
         self.state = None
         self.focused.connect(self.focusNode)
         self.sizeChanged.connect(self.updateHeight)
@@ -225,9 +225,6 @@ class QGraphicsNode(ui.QViewWidget):
         resize widget to its minimum height
         """
         self.resize(self.width(), 0)
-
-    def _mouseDoubleClickEvent(self, event):
-        self.graph.renameNode(self)
 
     @property
     def mid_pos(self):
