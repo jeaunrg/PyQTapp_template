@@ -137,6 +137,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         def openInDock():
             widget = self.computeTableWidget(data)
             dock = self.graph._view.addWidgetInDock(widget)
+            self.nameChanged.connect(lambda _, new: dock.setWindowTitle(new))
             dock.setWindowTitle(self.name)
 
         widget.maximize.clicked.connect(openInDock)
