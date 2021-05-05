@@ -199,6 +199,9 @@ class QGraphicsNode(ui.QViewWidget):
         self.links = []
         self.initialPosition = None
 
+    def get_parent_names(self):
+        return [p.name for p in self.parents]
+
     def hideShowWidget(self, widget, button=None):
         widget.show() if widget.isHidden() else widget.hide()
         self.updateHeight(True)
@@ -235,7 +238,12 @@ class QGraphicsNode(ui.QViewWidget):
         delete itself and all related graphic items (links and junctions)
         """
         for link in self.links:
+            link.delete()
             self.graph.scene.removeItem(link)
+
+        #     parent.positionChanged.connect(link.updatePos)
+        # parent.sizeChanged.connect(link.updatePos)
+
         self.graph.scene.removeItem(self._item)
         self._proxy.deleteLater()
         self.deleteLater()
@@ -336,6 +344,15 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
                 return intersection_point
         return QtCore.QPointF()
 
+    def delete(self):
+        """
+        delete connection between link and parent/child
+        """
+        self._parent.sizeChanged.disconnect(self.updatePos)
+        self._parent.positionChanged.disconnect(self.updatePos)
+        self._child.sizeChanged.disconnect(self.updatePos)
+        self._child.positionChanged.disconnect(self.updatePos)
+
     def updatePos(self):
         """
         This method create the arrow between child and parent
@@ -379,7 +396,7 @@ class PandasModel(QtCore.QAbstractTableModel):
             self._data = df.set_index(header_colname)
 
     def format(self, value):
-        return '' if np.isnan(value) else str(value)
+        return '' if str(value) == 'nan' else str(value)
 
     def rowCount(self, parent=None):
         return self._data.shape[0]

@@ -1,11 +1,51 @@
 {
-    "module1": {
+    "loadCSV": {
         "type": "primary",
-        "function": "call_function1"
+        "function": "call_load_data"
     },
-    "module2": {
-        "type": "secondary"
+    "SQLrequest": {
+        "type": "primary",
+        "function": "call_request_database"
     },
+
+    "standardize": {
+        "type": "secondary",
+        "menu": "basics",
+        "function": "call_standardize"
+    },
+    "describe": {
+        "type": "secondary",
+        "menu": "basics",
+        "function": "call_describe"
+    },
+    "select": {
+        "type": "secondary",
+        "menu": "basics",
+        "function": "call_select"
+    },
+    "operation": {
+        "type": "secondary",
+        "menu": "basics",
+        "function": "call_operation"
+    },
+
+    "merge": {
+        "type": "secondary",
+        "menu": "advanced",
+        "function": "call_merge"
+    },
+
+    "transfusion": {
+        "type": "secondary",
+        "menu": "research",
+        "function": "call_compute_transfusion"
+    },
+
+    "save": {
+        "type": "secondary",
+        "function": "call_save_data"
+    },
+
     "delete": {
         "type": "secondary"
     }

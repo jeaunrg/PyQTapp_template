@@ -1,4 +1,6 @@
 from PyQt5 import QtCore
+from src import RESULT_STACK
+import copy
 
 
 class Runner(QtCore.QThread):
@@ -47,6 +49,22 @@ def view_manager(threadable=True):
                 runner.start()
             else:
                 presenter.post_function(module, function(**args))
-                module._runners.remove(runner)
         return inner
     return decorator
+
+
+def get_data(name):
+    if name in RESULT_STACK:
+        return copy.copy(RESULT_STACK[name])
+
+
+def get_checked(widget, names):
+    checked = []
+    for name in names:
+        if widget.__dict__[name].isChecked():
+            checked.append(name)
+    return checked
+
+
+def store_data(name, df):
+    RESULT_STACK[name] = df

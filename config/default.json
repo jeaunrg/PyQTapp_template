@@ -4,6 +4,6 @@
 
     "space_between_nodes": [50, 50],
     "style": "StyleTemplate",
-    "theme": "dark"
+    "theme": "bright"
 
 }

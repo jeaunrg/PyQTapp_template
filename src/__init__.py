@@ -8,6 +8,8 @@ RESOURCE_DIR = os.path.join(MAIN_DIR, "resources")
 IMG_DIR = os.path.join(RESOURCE_DIR, "images")
 DESIGN_DIR = os.path.join(MAIN_DIR, "resources", "design")
 CONFIG_DIR = os.path.join(MAIN_DIR, "config")
+DATA_DIR = os.path.join(RESOURCE_DIR, "data")
+OUT_DIR = os.path.join(DATA_DIR, "out")
 
 # true results
 RESULT_STACK = {}

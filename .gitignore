@@ -1,5 +1,5 @@
 # output folder
-resources/data/out/*
+resources/data/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

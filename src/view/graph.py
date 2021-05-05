@@ -12,7 +12,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
 
         # add parameters widget
-        uifile_path = os.path.join(DESIGN_DIR, 'ui', self.type+'.ui')
+        uifile_path = os.path.join(DESIGN_DIR, 'ui', 'modules', self.type+'.ui')
         if not os.path.isfile(uifile_path):
             print("{} does not exists".format(uifile_path))
         else:
@@ -50,7 +50,9 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
 
         """
         # create the output widget depending on output type
-        if isinstance(result, Exception):
+        if result is None:
+            return
+        elif isinstance(result, Exception):
             new_widget = QtWidgets.QWidget()
             self.updateHeight(True)
             self.hideResult.hide()
@@ -338,6 +340,10 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         # remove node from parent children
         for p in parent.parents:
             p.childs.remove(parent)
+        # # remove link
+        # parent.positionChanged.disconnect(link.updatePos)
+        # parent.sizeChanged.connect(link.updatePos)
+
         # delete node and links
         parent.delete()
         del self.nodes[parent.name]

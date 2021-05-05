@@ -11,7 +11,6 @@ class View(QtWidgets.QMainWindow):
     and send signals for specific actions
 
     """
-    closed = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -136,5 +135,4 @@ class View(QtWidgets.QMainWindow):
         return dock
 
     def closeEvent(self, event):
-        self.closed.emit()
         QtWidgets.QMainWindow.closeEvent(self, event)
