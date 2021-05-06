@@ -177,8 +177,10 @@ class QGraphicsNode(QViewWidget):
         self.splitter.setStretchFactor(1, 1)
 
         self.button.clicked.connect(lambda: self.hideShowWidget(self.splitter))
-        self.maximizeParameters.clicked.connect(lambda: self.maximize(self.parameters, self.maximizeParameters))
-        self.maximizeResult.clicked.connect(lambda:  self.maximize(self.result, self.maximizeResult))
+        self.maximizeParameters.clicked.connect(lambda: self.maximize(self.parameters, self.maximizeParameters,
+                                                                      self.widget_1.layout()))
+        self.maximizeResult.clicked.connect(lambda:  self.maximize(self.result, self.maximizeResult,
+                                                                   self.widget_2.layout()))
         self.maximizeResult.hide()
 
         self.button.mouseDoubleClickEvent = lambda e: self.graph.renameNode(self)
@@ -199,19 +201,18 @@ class QGraphicsNode(QViewWidget):
         self.links = []
         self.initialPosition = None
 
-    def maximize(self, widget, button, state=None):
+    def maximize(self, widget, button, local_parent, state=None):
         if state is None:
             state = not isinstance(widget.parent(), QtWidgets.QDockWidget)
         button.setChecked(state)
         if state:
-            widget.local_parent = widget.parent().layout()
             dock = self.graph._view.addWidgetInDock(widget)
-            dock.closeEvent = lambda e: self.maximize(widget, button, False)
-            self.nameChanged.connect(lambda _, newname: dock.setWindowTitle(newname))
+            dock.closeEvent = lambda _: self.maximize(dock.widget(), button, local_parent, False)
+            self.nameChanged.connect(lambda _, newname: widget.parent().setWindowTitle(newname))
             dock.setWindowTitle(self.name)
         else:
             widget.parent().close()
-            widget.local_parent.addWidget(widget)
+            local_parent.addWidget(widget)
 
     def hideShowWidget(self, widget, button=None):
         if widget.isHidden():
@@ -449,6 +450,14 @@ class QFormatLine(QtWidgets.QWidget):
 
     def hideUnit(self):
         self.unit.show() if self.types.currentText() == 'timedelta' else self.unit.hide()
+
+
+class QCustomDockWidget(QtWidgets.QDockWidget):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        self.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
+        self.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
 
 
 class PandasModel(QtCore.QAbstractTableModel):

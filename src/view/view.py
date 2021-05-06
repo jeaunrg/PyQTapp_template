@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from src import DESIGN_DIR, DEFAULT
-from src.view import graph, utils
+from src.view import graph, utils, ui
 import json
 import os
 
@@ -128,10 +128,7 @@ class View(QtWidgets.QMainWindow):
         dock: QDockWidget
 
         """
-        dock = QtWidgets.QDockWidget()
-        dock.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
-        dock.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
+        dock = ui.QCustomDockWidget()
         docks = self.findChildren(QtWidgets.QDockWidget)
 
         dock.setWidget(widget)
