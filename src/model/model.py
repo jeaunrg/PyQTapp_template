@@ -10,6 +10,30 @@ import matplotlib.pyplot as plt
 class Model():
 
     @utils.protector
+    def request_database(self, url, cmd=None):
+        pysql = utils.PySQL(url)
+        pysql.connect()
+        if cmd is not None:
+            outdf = pysql.execute(cmd)
+        pysql.close()
+        return outdf
+
+    @utils.protector
+    def describe_database(self, url):
+        cmd = "SELECT * FROM sqlite_master WHERE type='table'"
+        return self.request_database(url, cmd)
+
+    @utils.protector
+    def describe_table(self, url, table_name):
+        cmd = "PRAGMA table_info({})".format(table_name)
+        return self.request_database(url, cmd)
+
+    @utils.protector
+    def extract_from_database(self, url, table, columns):
+        cmd = "SELECT [{0}] FROM {1}".format("], [".join(columns), table)
+        return self.request_database(url, cmd)
+
+    @utils.protector
     def computeTransfusion(self, df, groupby, time_colname, value_colname, normalize_time=True, time_format=None):
         # df = df[[groupby, time_colname, value_colname]]
         df = self.standardize(df, {time_colname: ('time', time_format), value_colname: 'float'})
@@ -50,13 +74,6 @@ class Model():
         fig.autofmt_xdate()
 
         return ax
-
-    @utils.protector
-    def request_database(self, url, sql_command):
-        pysql = utils.PySQL(url)
-        outdf = pysql.execute(sql_command)
-        pysql.close()
-        return outdf
 
     @utils.protector
     def merge(self, dfs, *args, **kwargs):

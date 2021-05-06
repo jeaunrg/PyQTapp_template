@@ -33,13 +33,24 @@ def to_datetime(arg, formats):
 class PySQL:
     def __init__(self, path):
         self.path = path
-        self.bdd = sqlite3.connect(path)
+        self.bdd = None
+
+    def connect(self):
+        self.bdd = sqlite3.connect(self.path)
 
     def initialize(self, table_name, dataframe):
         dataframe.to_sql(table_name, con=self.bdd, if_exists="replace")
 
     def feed(self, table_name, dataframe):
         dataframe.to_sql(table_name, con=self.bdd, if_exists="append")
+
+    def get_table_names(self):
+        cmd = "SELECT * FROM sqlite_master WHERE type='table'"
+        return self.execute(cmd)
+
+    def get_colnames(self, table_name):
+        cmd = "PRAGMA table_info({})".format(table_name)
+        return self.execute(cmd)
 
     def execute(self, cmd):
         out = pd.read_sql_query(cmd, con=self.bdd)

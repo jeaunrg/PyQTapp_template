@@ -5,7 +5,7 @@
     },
     "SQLrequest": {
         "type": "primary",
-        "function": "call_request_database"
+        "function": "call_extract_from_database"
     },
 
     "standardize": {

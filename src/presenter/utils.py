@@ -1,4 +1,4 @@
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 from src import RESULT_STACK
 import copy
 
@@ -74,3 +74,29 @@ def get_checked(widget, names=None):
 
 def store_data(name, df):
     RESULT_STACK[name] = df
+
+
+def build_widgets_grid(widget_type, names, ncol=2, checked=None):
+    grid = QtWidgets.QWidget()
+    layout = QtWidgets.QGridLayout()
+    ncol = 2
+    i, j = 0, 0
+    for name in names:
+        widget = widget_type(name)
+        if checked:
+            if isinstance(widget, QtWidgets.QPushButton):
+                widget.setCheckable(True)
+            if isinstance(widget, QtWidgets.QRadioButton):
+                widget.setAutoExclusive(True)
+            if checked == 'all' or checked == 'first' and name == names[0]:
+                widget.setChecked(True)
+
+        grid.__dict__[name] = widget
+        layout.addWidget(widget, i, j)
+        j += 1
+        if j == ncol:
+            j, i = 0, i+1
+    if len(names) == 1:
+        widget.setEnabled(False)
+    grid.setLayout(layout)
+    return grid

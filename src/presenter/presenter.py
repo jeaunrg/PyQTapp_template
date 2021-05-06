@@ -1,9 +1,9 @@
-from src.presenter.utils import view_manager, get_data, get_checked
-from src import CONFIG_DIR
 import json
 import os
-from src import RESULT_STACK, DATA_DIR, OUT_DIR
+from src import RESULT_STACK, DATA_DIR, OUT_DIR, CONFIG_DIR
 from src.utils import ceval, empty_to_none
+from src.view.utils import replaceWidget
+from src.presenter import utils
 from PyQt5 import QtWidgets
 from src.view import ui
 import pandas as pd
@@ -58,15 +58,19 @@ class Presenter():
 
     def init_modules_custom_connections(self, module):
 
-        if module.type in ["loadCSV", "SQLrequest"]:
+        if module.type == "loadCSV":
             module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
+
+        elif module.type == "SQLrequest":
+            module.parameters.browse.clicked.connect(lambda: (self.browse_data(module),
+                                                              self.update_sql_module(module)))
 
         elif module.type == "save":
             module.parameters.browse.clicked.connect(lambda: self.browse_savepath(module))
 
         else:
-            parent_colnames = [list(get_data(name).columns) for name in
-                               module.get_parent_names() if isinstance(get_data(name), pd.DataFrame)]
+            parent_colnames = [list(utils.get_data(name).columns) for name in
+                               module.get_parent_names() if isinstance(utils.get_data(name), pd.DataFrame)]
             if not parent_colnames:
                 pass
 
@@ -140,11 +144,35 @@ class Presenter():
 
         module.setSettings(self._view.settings['graph'].get(module.name))
 
+    def update_sql_module(self, module):
+        description_dataframe = self._model.describe_database(module.parameters.path.text())
+        if isinstance(description_dataframe, Exception):
+            return self.call_test_database_connection(module)
+
+        names = description_dataframe['name']
+        grid = utils.build_widgets_grid(QtWidgets.QRadioButton, names, checked='first')
+        module.parameters.tableNames = replaceWidget(module.parameters.tableNames, grid)
+
+        def update_columns(state, name):
+            if not state:
+                return
+            table_description = self._model.describe_table(module.parameters.path.text(), name)
+            colnames_grid = utils.build_widgets_grid(QtWidgets.QPushButton, table_description['name'], checked='all')
+            module.parameters.colnames = replaceWidget(module.parameters.colnames, colnames_grid)
+
+        def connectRadio(radiobutton):
+            radiobutton.toggled.connect(lambda s: update_columns(s, radiobutton.text()))
+
+        for w in grid.__dict__.values():
+            connectRadio(w)
+
+        update_columns(True, names[0])
+
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
 
     def prior_to_function(self, module):
         """
-        This method is called by the view_manager before of the function call
+        This method is called by the utils.view_manager before of the function call
 
         Parameters
         ----------
@@ -157,7 +185,7 @@ class Presenter():
     def post_function(self, module, output):
         """
         This method manage the output of a model function based on the output type
-        it is called by the view_manager at the end of the model process
+        it is called by the utils.view_manager at the end of the model process
 
         Parameters
         ----------
@@ -206,7 +234,21 @@ class Presenter():
         module.parameters.path.setToolTip(filename+extension)
 
     # ----------------------------- MODEL CALL --------------------------------#
-    @view_manager(True)
+    @utils.view_manager(True)
+    def call_test_database_connection(self, module):
+        function = self._model.request_database
+        args = {'url': module.parameters.path.text()}
+        return function, args
+
+    @utils.view_manager(True)
+    def call_extract_from_database(self, module):
+        function = self._model.extract_from_database
+        args = {"url": module.parameters.path.text(),
+                "table": utils.get_checked(module.parameters.tableNames)[0],
+                "columns": utils.get_checked(module.parameters.colnames)}
+        return function, args
+
+    @utils.view_manager(True)
     def call_load_data(self, module):
         separator = module.parameters.separator.currentText()
         if separator == "{tabulation}":
@@ -224,52 +266,45 @@ class Presenter():
                 "sort": module.parameters.sort.isChecked()}
         return function, args
 
-    @view_manager(True)
-    def call_request_database(self, module):
-        function = self._model.request_database
-        args = {"url": module.parameters.path.text(),
-                "sql_command": module.parameters.command.text()}
-        return function, args
-
-    @view_manager(True)
+    @utils.view_manager(True)
     def call_describe(self, module):
         function = self._model.compute_stats
-        args = {"df": get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_names()[0]),
                 "column": empty_to_none(module.parameters.column.currentText()),
                 "groupBy": empty_to_none(module.parameters.group_by.currentText()),
-                "statistics": get_checked(module.parameters, ["count", "minimum", "maximum",
-                                                              "mean", "sum", "median", "std"]),
+                "statistics": utils.get_checked(module.parameters, ["count", "minimum", "maximum",
+                                                                    "mean", "sum", "median", "std"]),
                 "ignore_nan": module.parameters.ignore_nan.isChecked()}
         return function, args
 
-    @view_manager(True)
+    @utils.view_manager(True)
     def call_select_rows(self, module):
         function = self._model.select_rows
-        args = {"df": get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_names()[0]),
                 "column": module.parameters.column.currentText(),
                 "equal_to":  ceval(module.parameters.equal_to.text()),
                 "different_from":  ceval(module.parameters.different_from.text()),
                 "higher_than": ceval(module.parameters.higher_than.text()),
                 "lower_than": ceval(module.parameters.lower_than.text()),
-                "logical": get_checked(module.parameters, ["or", "and"])[0]}
+                "logical": utils.get_checked(module.parameters, ["or", "and"])[0]}
         return function, args
 
-    @view_manager(True)
+    @utils.view_manager(True)
     def call_select_columns(self, module):
         function = self._model.select_columns
-        args = {"df": get_data(module.get_parent_names()[0]),
-                "columns": get_checked(module.parameters.grid)}
+        args = {"df": utils.get_data(module.get_parent_names()[0]),
+                "columns": utils.get_checked(module.parameters.grid)}
         return function, args
 
-    @view_manager(True)
+    @utils.view_manager(True)
     def call_operation(self, module):
         function = self._model.apply_formula
-        args = {"df": get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_names()[0]),
                 "formula": module.parameters.formula.text(),
                 "formula_name": module.name}
         return function, args
 
-    @view_manager(True)
+    @utils.view_manager(True)
     def call_standardize(self, module):
         type_dict, format_dict, unit_dict = {}, {}, {}
         for i in range(module.parameters.form.rowCount()):
@@ -284,23 +319,23 @@ class Presenter():
                 type_dict[label] = ''
 
         function = self._model.standardize
-        args = {"df": get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_names()[0]),
                 "type_dict": type_dict,
                 "format_dict": format_dict,
                 "unit_dict": unit_dict}
         return function, args
 
-    @view_manager(True)
+    @utils.view_manager(True)
     def call_save_data(self, module):
         function = self._model.save_data
         args = {"path": module.parameters.path.text(),
-                "dfs": [get_data(n) for n in module.get_parent_names()]}
+                "dfs": [utils.get_data(n) for n in module.get_parent_names()]}
         return function, args
 
-    @view_manager(True)
+    @utils.view_manager(True)
     def call_merge(self, module):
         function = self._model.merge
-        args = {"dfs": [get_data(n) for n in module.get_parent_names()],
+        args = {"dfs": [utils.get_data(n) for n in module.get_parent_names()],
                 "how": module.parameters.how.currentText(),
                 "on": ceval(module.parameters.on.currentText()),
                 "left_on": ceval(module.parameters.left_on.currentText()),
