@@ -40,6 +40,10 @@ QPushButton:pressed {
     background-color: %(viewback_color)s;
     border-color: %(feature_color)s;
 }
+QPushButton:checked {
+    background-color: %(viewback_color)s;
+    border-color: %(feature_color)s;
+}
 
 QPushButton#button {
     padding: 6px;

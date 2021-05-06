@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>314</width>
-    <height>226</height>
+    <height>229</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -223,7 +223,7 @@
           <x>0</x>
           <y>0</y>
           <width>288</width>
-          <height>82</height>
+          <height>96</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -244,18 +244,11 @@
     </widget>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="layout">
-     <item alignment="Qt::AlignTop">
-      <widget class="QPushButton" name="apply">
-       <property name="text">
-        <string>apply</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <layout class="QHBoxLayout" name="loading"/>
-     </item>
-    </layout>
+    <widget class="QPushButton" name="apply">
+     <property name="text">
+      <string>apply</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

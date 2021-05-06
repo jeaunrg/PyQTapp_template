@@ -18,11 +18,17 @@
         "menu": "basics",
         "function": "call_describe"
     },
-    "select": {
+    "selectRows": {
         "type": "secondary",
         "menu": "basics",
-        "function": "call_select"
+        "function": "call_select_rows"
     },
+    "selectColumns": {
+        "type": "secondary",
+        "menu": "basics",
+        "function": "call_select_columns"
+    },
+
     "operation": {
         "type": "secondary",
         "menu": "basics",

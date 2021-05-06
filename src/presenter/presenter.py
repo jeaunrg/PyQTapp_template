@@ -76,7 +76,26 @@ class Presenter():
                 module.parameters.group_by.clear()
                 module.parameters.group_by.addItems([''] + parent_colnames[0])
 
-            elif module.type == "select":
+            elif module.type == "selectColumns":
+                ncol = 2
+                i, j = 0, 0
+                for colname in parent_colnames[0]:
+                    button = QtWidgets.QPushButton(colname)
+                    button.setCheckable(True)
+                    button.setChecked(True)
+                    module.parameters.grid.addWidget(button, i, j)
+                    module.parameters.grid.__dict__[colname] = button
+                    j += 1
+                    if j == ncol:
+                        j, i = 0, i+1
+
+                def checkAll(state):
+                    for b in module.parameters.grid.__dict__.values():
+                        b.setChecked(state)
+                module.parameters.selectAll.clicked.connect(lambda s: checkAll(True))
+                module.parameters.deselectAll.clicked.connect(lambda s: checkAll(False))
+
+            elif module.type == "selectRows":
                 module.parameters.column.addItems(parent_colnames[0])
 
             elif module.type == "merge":
@@ -111,13 +130,13 @@ class Presenter():
                     connectButton(button)
 
             elif module.type == "standardize":
-                # dtypes = get_data(module.get_parent_names()[0]).dtypes.to_dict()
                 for i in range(module.parameters.form.rowCount()):
                     module.parameters.form.removeRow(0)
                 for i, colname in enumerate(parent_colnames[0]):
                     line = ui.QFormatLine()
                     module.parameters.form.addRow(QtWidgets.QLabel(colname), line)
                     module.parameters.__dict__['format_line_{}'.format(i)] = line
+                module.resize(module.parameters.form.sizeHint().width()+50, module.height())
 
         module.setSettings(self._view.settings['graph'].get(module.name))
 
@@ -224,8 +243,8 @@ class Presenter():
         return function, args
 
     @view_manager(True)
-    def call_select(self, module):
-        function = self._model.select_data
+    def call_select_rows(self, module):
+        function = self._model.select_rows
         args = {"df": get_data(module.get_parent_names()[0]),
                 "column": module.parameters.column.currentText(),
                 "equal_to":  ceval(module.parameters.equal_to.text()),
@@ -233,6 +252,13 @@ class Presenter():
                 "higher_than": ceval(module.parameters.higher_than.text()),
                 "lower_than": ceval(module.parameters.lower_than.text()),
                 "logical": get_checked(module.parameters, ["or", "and"])[0]}
+        return function, args
+
+    @view_manager(True)
+    def call_select_columns(self, module):
+        function = self._model.select_columns
+        args = {"df": get_data(module.get_parent_names()[0]),
+                "columns": get_checked(module.parameters.grid)}
         return function, args
 
     @view_manager(True)

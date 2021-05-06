@@ -31,7 +31,7 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         force: bool, default=False
             if True, use a trick to force resize in extreme cases
         """
-        if self.widget.isHidden() or self.result.isHidden() or self.result.sizeHint() == QtCore.QSize(-1, -1):
+        if self.splitter.isHidden() or self.result.isHidden() or self.result.sizeHint() == QtCore.QSize(-1, -1):
             if force:
                 width = self.width()
                 self.adjustSize()
@@ -54,19 +54,18 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         elif isinstance(result, Exception):
             new_widget = QtWidgets.QWidget()
             self.updateHeight(True)
-            self.hideResult.hide()
+            # self.hideResult.hide()
+            self.maximizeResult.hide()
         else:
             if isinstance(result, (int, float, str, bool)):
                 new_widget = self.computeTextWidget(result)
             elif isinstance(result, pd.DataFrame):
                 new_widget = self.computeTableWidget(result)
-            self.hideResult.show()
+            # self.hideResult.show()
+            self.maximizeResult.show()
 
         # replace current output widget with the new one
-        self.widget.layout().setStretchFactor(self.result, 10)
-        self.widget.layout().replaceWidget(self.result, new_widget)
-        self.result.deleteLater()
-        self.result = new_widget
+        self.result = utils.replaceWidget(self.result, new_widget)
 
     def computeTextWidget(self, data):
         """
@@ -133,13 +132,6 @@ class QCustomGraphicsNode(ui.QGraphicsNode):
         widget.Vheader.currentIndexChanged.connect(updateVheader)
         updateVheader(0)
 
-        def openInDock():
-            widget = self.computeTableWidget(data)
-            dock = self.graph._view.addWidgetInDock(widget)
-            self.nameChanged.connect(lambda _, new: dock.setWindowTitle(new))
-            dock.setWindowTitle(self.name)
-
-        widget.maximize.clicked.connect(openInDock)
         self.leftfoot.setText("{0} x {1}    ({2} {3})".format(*data.shape, *utils.getMemoryUsage(data)))
 
         return widget

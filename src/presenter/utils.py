@@ -58,11 +58,17 @@ def get_data(name):
         return copy.copy(RESULT_STACK[name])
 
 
-def get_checked(widget, names):
+def get_checked(widget, names=None):
     checked = []
-    for name in names:
-        if widget.__dict__[name].isChecked():
-            checked.append(name)
+    if names is None:
+        for name, w in widget.__dict__.items():
+            if w.isChecked():
+                checked.append(name)
+    else:
+        for name in names:
+            w = widget.__dict__[name]
+            if w.isChecked():
+                checked.append(name)
     return checked
 
 

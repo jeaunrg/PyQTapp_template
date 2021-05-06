@@ -238,7 +238,7 @@ class Model():
         return selections
 
     @utils.protector
-    def select_data(self, df, column, equal_to=None, different_from=None,
+    def select_rows(self, df, column, equal_to=None, different_from=None,
                     higher_than=None, lower_than=None, logical="or"):
         selections = self.get_selections(df[column], equal_to, different_from, higher_than, lower_than)
         if logical == "and":
@@ -248,6 +248,10 @@ class Model():
         if isinstance(selection, np.ndarray):
             df = df.loc[selection]
         return df
+
+    @utils.protector
+    def select_columns(self, df, columns):
+        return df[columns]
 
     @utils.protector
     def save_data(self, dfs, path):

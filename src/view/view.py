@@ -142,6 +142,9 @@ class View(QtWidgets.QMainWindow):
         elif len(docks) > 0:
             self.splitDockWidget(docks[-1], dock, QtCore.Qt.Horizontal)
         self.setTabPosition(QtCore.Qt.RightDockWidgetArea, QtWidgets.QTabWidget.South)
+
+        if not docks:
+            self.resizeDocks({dock}, {400}, QtCore.Qt.Horizontal)
         dock.show()
         dock.raise_()
         return dock

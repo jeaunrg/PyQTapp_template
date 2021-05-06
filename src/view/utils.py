@@ -54,6 +54,20 @@ def menu_from_dict(acts, activation_function=None, menu=None):
     return menu
 
 
+def replaceWidget(prev_widget, new_widget):
+    layout = prev_widget.parent()
+    if isinstance(layout, QtWidgets.QDockWidget):
+        layout.setWidget(new_widget)
+        prev_widget.deleteLater()
+    else:
+        if isinstance(layout, QtWidgets.QWidget):
+            layout = layout.layout()
+        if layout is not None:
+            layout.replaceWidget(prev_widget, new_widget)
+            prev_widget.deleteLater()
+    return new_widget
+
+
 def getMemoryUsage(object):
     memory = 0
     if isinstance(object, pd.DataFrame):

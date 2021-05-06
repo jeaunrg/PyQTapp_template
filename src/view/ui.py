@@ -45,7 +45,7 @@ class QViewWidget(QtWidgets.QWidget):
         self.lefthead = QtWidgets.QLabel()
         self.grap = QGrap()
         self.selected = QtWidgets.QCheckBox()
-        self.selected.setStyleSheet("QCheckBox::indicator {border: 0px; };")
+        # self.selected.setStyleSheet("QCheckBox::indicator {border: 0px; };")
         header.addWidget(self.selected)
         header.addWidget(self.lefthead)
         header.addWidget(self.grap)
@@ -139,11 +139,8 @@ class QViewWidget(QtWidgets.QWidget):
         if inter:
             return print("FAILED setWidget: you cannot set widget in QViewWidget " +
                          "containing parameters like:\n " + " ".join(list(inter)))
-        self.layout().replaceWidget(self.centralWidget, widget)
-        self.__dict__.update(widget.__dict__)
-        self.centralWidget.deleteLater()
-        self.centralWidget = widget
-        self.layout().setStretchFactor(self.centralWidget, 1)
+        self.centralWidget = utils.replaceWidget(self.centralWidget, widget)
+        self.__dict__.update(self.centralWidget.__dict__)
 
     def addToScene(self, scene):
         self.sizeChanged.connect(lambda: self._item.setRect(QtCore.QRectF(self.geometry().adjusted(0, 0, 0, 0))))
@@ -177,14 +174,12 @@ class QGraphicsNode(QViewWidget):
         self.type = type
         self.name = name
         self.button.setText(name)
-        self.vbox.setStretchFactor(self.button, 0)
-        self.vbox.setStretchFactor(self.parameters, 1)
-        self.vbox.setStretchFactor(self.result, 10)
+        self.splitter.setStretchFactor(1, 1)
 
-        self.button.clicked.connect(lambda: self.hideShowWidget(self.widget))
-        self.hideResult.clicked.connect(lambda: self.hideShowWidget(self.result, self.hideResult))
-        self.hideParameters.clicked.connect(lambda: self.hideShowWidget(self.parameters, self.hideParameters))
-        self.hideResult.hide()
+        self.button.clicked.connect(lambda: self.hideShowWidget(self.splitter))
+        self.maximizeParameters.clicked.connect(lambda: self.maximize(self.parameters, self.maximizeParameters))
+        self.maximizeResult.clicked.connect(lambda:  self.maximize(self.result, self.maximizeResult))
+        self.maximizeResult.hide()
 
         self.button.mouseDoubleClickEvent = lambda e: self.graph.renameNode(self)
         self.state = None
@@ -194,6 +189,9 @@ class QGraphicsNode(QViewWidget):
         self.selected.stateChanged.connect(self._item.setSelected)
         self.positionChanged.connect(self.moveSelection)
 
+        self.widget_1.layout().setAlignment(QtCore.Qt.AlignTop)
+        self.widget_2.layout().setAlignment(QtCore.Qt.AlignTop)
+
         self.loading.setStyleSheet("QProgressBar { max-height: 2px; \
                                     border-color: transparent; background-color: transparent;}")
         self.childs = []
@@ -201,8 +199,19 @@ class QGraphicsNode(QViewWidget):
         self.links = []
         self.initialPosition = None
 
-    def get_parent_names(self):
-        return [p.name for p in self.parents]
+    def maximize(self, widget, button, state=None):
+        if state is None:
+            state = not isinstance(widget.parent(), QtWidgets.QDockWidget)
+        button.setChecked(state)
+        if state:
+            widget.local_parent = widget.parent().layout()
+            dock = self.graph._view.addWidgetInDock(widget)
+            dock.closeEvent = lambda e: self.maximize(widget, button, False)
+            self.nameChanged.connect(lambda _, newname: dock.setWindowTitle(newname))
+            dock.setWindowTitle(self.name)
+        else:
+            widget.parent().close()
+            widget.local_parent.addWidget(widget)
 
     def hideShowWidget(self, widget, button=None):
         if widget.isHidden():
@@ -214,6 +223,9 @@ class QGraphicsNode(QViewWidget):
         if button is not None:
             new_text = '+' + button.text()[1:] if widget.isHidden() else '-' + button.text()[1:]
             button.setText(new_text)
+
+    def get_parent_names(self):
+        return [p.name for p in self.parents]
 
     def moveSelection(self):
         if self is self.graph.focus:
@@ -246,6 +258,12 @@ class QGraphicsNode(QViewWidget):
             link.delete()
             self.graph.scene.removeItem(link)
 
+        # delete whild widget if in dock
+        if isinstance(self.parameters.parent(), QtWidgets.QDockWidget):
+            self.parameters.parent().close()
+        if isinstance(self.result.parent(), QtWidgets.QDockWidget):
+            self.result.parent().close()
+
         self.graph.scene.removeItem(self._item)
         self._proxy.deleteLater()
         self.deleteLater()
@@ -275,10 +293,8 @@ class QGraphicsNode(QViewWidget):
 
     def setParametersWidget(self, ui_file):
         new_widget = uic.loadUi(ui_file)
-        self.widget.layout().replaceWidget(self.parameters, new_widget)
-        self.parameters.deleteLater()
-        self.parameters = new_widget
-        self.vbox.setStretchFactor(self.parameters, 1)
+        new_widget.layout().setAlignment(QtCore.Qt.AlignTop)
+        self.parameters = utils.replaceWidget(self.parameters, new_widget)
 
     def setSettings(self, settings):
         if settings is None:
@@ -291,7 +307,7 @@ class QGraphicsNode(QViewWidget):
         state = settings['state']
         self.graph.renameNode(self, state['name'])
 
-        if state['hide'][0] and not self.widget.isHidden():
+        if state['hide'][0] and not self.splitter.isHidden():
             self.button.clicked.emit()
         if state['hide'][1] and not self.parameters.isHidden():
             self.hideParameters.clicked.emit()
@@ -307,7 +323,7 @@ class QGraphicsNode(QViewWidget):
                              'parents': [p.name for p in self.parents],
                              'position': self.pos(),
                              'size': self.size(),
-                             'hide':  [self.widget.isHidden(), self.parameters.isHidden()]}
+                             'hide':  [self.splitter.isHidden(), self.parameters.isHidden()]}
         return settings
 
 
