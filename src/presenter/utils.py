@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore
 from src import RESULT_STACK
 import copy
 
@@ -25,7 +25,7 @@ class Runner(QtCore.QThread):
         self.out = self._target(*self._args, **self._kwargs)
 
 
-def view_manager(threadable=True):
+def manager(threadable=True):
     """
     this decorator manage threading
 
@@ -37,18 +37,18 @@ def view_manager(threadable=True):
     """
     def decorator(foo):
         def inner(presenter, module):
-            presenter.prior_to_function(module)
+            presenter.prior_manager(module)
             function, args = foo(presenter, module)
 
             # start the process inside a QThread
             if threadable and presenter.threading_enabled:
                 runner = Runner(function, **args)
                 module._runners.append(runner)
-                runner.finished.connect(lambda: (presenter.post_function(module, runner.out),
+                runner.finished.connect(lambda: (presenter.post_manager(module, runner.out),
                                                  module._runners.remove(runner)))
                 runner.start()
             else:
-                presenter.post_function(module, function(**args))
+                presenter.post_manager(module, function(**args))
         return inner
     return decorator
 
@@ -74,29 +74,3 @@ def get_checked(widget, names=None):
 
 def store_data(name, df):
     RESULT_STACK[name] = df
-
-
-def build_widgets_grid(widget_type, names, ncol=2, checked=None):
-    grid = QtWidgets.QWidget()
-    layout = QtWidgets.QGridLayout()
-    ncol = 2
-    i, j = 0, 0
-    for name in names:
-        widget = widget_type(name)
-        if checked:
-            if isinstance(widget, QtWidgets.QPushButton):
-                widget.setCheckable(True)
-            if isinstance(widget, QtWidgets.QRadioButton):
-                widget.setAutoExclusive(True)
-            if checked == 'all' or checked == 'first' and name == names[0]:
-                widget.setChecked(True)
-
-        grid.__dict__[name] = widget
-        layout.addWidget(widget, i, j)
-        j += 1
-        if j == ncol:
-            j, i = 0, i+1
-    if len(names) == 1:
-        widget.setEnabled(False)
-    grid.setLayout(layout)
-    return grid

@@ -1,6 +1,6 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
 from src import DESIGN_DIR, DEFAULT
-from src.view import graph, utils, ui
+from src.view import graph, utils
 import json
 import os
 
@@ -83,6 +83,9 @@ class View(QtWidgets.QMainWindow):
         """
         This method init widgets UI for the main window
         """
+        self.setTabPosition(QtCore.Qt.RightDockWidgetArea, QtWidgets.QTabWidget.West)
+        self.setTabPosition(QtCore.Qt.LeftDockWidgetArea, QtWidgets.QTabWidget.East)
+
         self.settings = {'graph': {}}
         self.graph = graph.QCustomGraphicsView(self, 'horizontal')
         self.setCentralWidget(self.graph)
@@ -115,7 +118,7 @@ class View(QtWidgets.QMainWindow):
 
         self.modules[moduleName] = module
 
-    def addWidgetInDock(self, widget):
+    def addWidgetInDock(self, widget, side=QtCore.Qt.RightDockWidgetArea):
         """
         put widget inside a qdock widget
 
@@ -128,20 +131,22 @@ class View(QtWidgets.QMainWindow):
         dock: QDockWidget
 
         """
-        dock = ui.QCustomDockWidget()
+        dock = QtWidgets.QDockWidget()
+        dock.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+        dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
+        dock.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
+
         docks = self.findChildren(QtWidgets.QDockWidget)
 
         dock.setWidget(widget)
-        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, dock)
+        self.addDockWidget(side, dock)
 
-        if len(docks) > 1:
-            self.tabifyDockWidget(docks[-1], dock)
-        elif len(docks) > 0:
-            self.splitDockWidget(docks[-1], dock, QtCore.Qt.Horizontal)
-        self.setTabPosition(QtCore.Qt.RightDockWidgetArea, QtWidgets.QTabWidget.South)
+        # tabify dock to existant docks
+        for dk in docks:
+            if self.dockWidgetArea(dk) == side:
+                self.tabifyDockWidget(dk, dock)
+                break
 
-        if not docks:
-            self.resizeDocks({dock}, {400}, QtCore.Qt.Horizontal)
         dock.show()
         dock.raise_()
         return dock

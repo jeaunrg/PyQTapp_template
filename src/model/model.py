@@ -30,6 +30,8 @@ class Model():
 
     @utils.protector
     def extract_from_database(self, url, table, columns):
+        if table is None:
+            raise ValueError("Empty table")
         cmd = "SELECT [{0}] FROM {1}".format("], [".join(columns), table)
         return self.request_database(url, cmd)
 

@@ -178,9 +178,11 @@ class QGraphicsNode(QViewWidget):
 
         self.button.clicked.connect(lambda: self.hideShowWidget(self.splitter))
         self.maximizeParameters.clicked.connect(lambda: self.maximize(self.parameters, self.maximizeParameters,
-                                                                      self.widget_1.layout()))
+                                                                      self.widget_1.layout(),
+                                                                      QtCore.Qt.LeftDockWidgetArea))
         self.maximizeResult.clicked.connect(lambda:  self.maximize(self.result, self.maximizeResult,
-                                                                   self.widget_2.layout()))
+                                                                   self.widget_2.layout(),
+                                                                   QtCore.Qt.RightDockWidgetArea))
         self.maximizeResult.hide()
 
         self.button.mouseDoubleClickEvent = lambda e: self.graph.renameNode(self)
@@ -201,13 +203,13 @@ class QGraphicsNode(QViewWidget):
         self.links = []
         self.initialPosition = None
 
-    def maximize(self, widget, button, local_parent, state=None):
+    def maximize(self, widget, button, local_parent, side=QtCore.Qt.RightDockWidgetArea, state=None):
         if state is None:
             state = not isinstance(widget.parent(), QtWidgets.QDockWidget)
         button.setChecked(state)
         if state:
-            dock = self.graph._view.addWidgetInDock(widget)
-            dock.closeEvent = lambda _: self.maximize(dock.widget(), button, local_parent, False)
+            dock = self.graph._view.addWidgetInDock(widget, side)
+            dock.closeEvent = lambda _: self.maximize(dock.widget(), button, local_parent, side, False)
             self.nameChanged.connect(lambda _, newname: widget.parent().setWindowTitle(newname))
             dock.setWindowTitle(self.name)
         else:
@@ -452,12 +454,59 @@ class QFormatLine(QtWidgets.QWidget):
         self.unit.show() if self.types.currentText() == 'timedelta' else self.unit.hide()
 
 
-class QCustomDockWidget(QtWidgets.QDockWidget):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        self.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
-        self.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
+class QGridButtonGroup(QtWidgets.QWidget):
+    def __init__(self, max_col=None, max_row=None):
+        super().__init__()
+        self._grid = QtWidgets.QGridLayout()
+        self.group = QtWidgets.QButtonGroup()
+        self.max_col = max_col
+        self.max_row = max_row
+        self._current_row, self._current_col = 0, 0
+        self.setLayout(self._grid)
+
+    def checkFirst(self):
+        if self.group.buttons():
+            self.group.buttons()[0].setChecked(True)
+
+    def checkAll(self, state=True):
+        print(state)
+        for b in self.group.buttons():
+            b.setChecked(state)
+
+    def checkedButtonText(self):
+        checked_button = self.group.checkedButton()
+        if checked_button:
+            return checked_button.text()
+
+    def checkedButtonsText(self):
+        checked_buttons = []
+        for b in self.group.buttons():
+            if b.isChecked():
+                checked_buttons.append(b.text())
+        return checked_buttons
+
+    def computePositions(self, n):
+        if self.max_row is None and self.max_col is None:
+            return np.ceil(np.sqrt(n)), np.ceil(np.sqrt(n))
+        elif self.max_row is not None:
+            return np.ceil(n / self.max_row), self.max_row
+        elif self.max_col is not None:
+            return np.ceil(n / self.max_col), self.max_col
+
+    def addWidgets(self, type, names):
+        if type in [QtWidgets.QPushButton, QtWidgets.QCheckBox]:
+            self.group.setExclusive(False)
+        positions = self.computePositions(len(names))
+        i = 0
+        for row in range(int(positions[0])):
+            for col in range(int(positions[1])):
+                if i < len(names):
+                    widget = type(names[i])
+                    if isinstance(widget, QtWidgets.QPushButton):
+                        widget.setCheckable(True)
+                    self._grid.addWidget(widget, row, col)
+                    self.group.addButton(widget)
+                    i += 1
 
 
 class PandasModel(QtCore.QAbstractTableModel):

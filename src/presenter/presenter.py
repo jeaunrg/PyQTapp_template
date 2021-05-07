@@ -62,8 +62,11 @@ class Presenter():
             module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
 
         elif module.type == "SQLrequest":
-            module.parameters.browse.clicked.connect(lambda: (self.browse_data(module),
-                                                              self.update_sql_module(module)))
+            module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
+            module.parameters.path.editingFinished.connect(lambda: self.update_sql_module(module))
+            module.parameters.browse.clicked.connect(lambda s: self.update_sql_module(module))
+            module.parameters.tableNames = replaceWidget(module.parameters.tableNames, ui.QGridButtonGroup(3))
+            module.parameters.colnames = replaceWidget(module.parameters.colnames, ui.QGridButtonGroup(3))
 
         elif module.type == "save":
             module.parameters.browse.clicked.connect(lambda: self.browse_savepath(module))
@@ -145,34 +148,34 @@ class Presenter():
         module.setSettings(self._view.settings['graph'].get(module.name))
 
     def update_sql_module(self, module):
-        description_dataframe = self._model.describe_database(module.parameters.path.text())
-        if isinstance(description_dataframe, Exception):
+
+        def update_columns(button, state):
+            if state:
+                colnames_grid = ui.QGridButtonGroup(3)
+                module.parameters.colnames = replaceWidget(module.parameters.colnames, colnames_grid)
+                if button is not None:
+                    table_description = self._model.describe_table(module.parameters.path.text(), button.text())
+                    colnames_grid.addWidgets(QtWidgets.QPushButton, table_description['name'])
+                    colnames_grid.checkAll()
+
+        database_description = self._model.describe_database(module.parameters.path.text())
+        # test connection
+        if isinstance(database_description, Exception):
             return self.call_test_database_connection(module)
 
-        names = description_dataframe['name']
-        grid = utils.build_widgets_grid(QtWidgets.QRadioButton, names, checked='first')
+        grid = ui.QGridButtonGroup(3)
+        grid.addWidgets(QtWidgets.QRadioButton, database_description['name'])
         module.parameters.tableNames = replaceWidget(module.parameters.tableNames, grid)
+        grid.group.buttonToggled.connect(update_columns)
+        grid.checkFirst()
 
-        def update_columns(state, name):
-            if not state:
-                return
-            table_description = self._model.describe_table(module.parameters.path.text(), name)
-            colnames_grid = utils.build_widgets_grid(QtWidgets.QPushButton, table_description['name'], checked='all')
-            module.parameters.colnames = replaceWidget(module.parameters.colnames, colnames_grid)
-
-        def connectRadio(radiobutton):
-            radiobutton.toggled.connect(lambda s: update_columns(s, radiobutton.text()))
-
-        for w in grid.__dict__.values():
-            connectRadio(w)
-
-        update_columns(True, names[0])
+        module.parameters.selectAll.toggled.connect(module.parameters.colnames.checkAll)
 
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
 
-    def prior_to_function(self, module):
+    def prior_manager(self, module):
         """
-        This method is called by the utils.view_manager before of the function call
+        This method is called by the utils.manager before of the function call
 
         Parameters
         ----------
@@ -182,10 +185,10 @@ class Presenter():
         module.lefthead.clear()
         module.lefthead.setToolTip(None)
 
-    def post_function(self, module, output):
+    def post_manager(self, module, output):
         """
         This method manage the output of a model function based on the output type
-        it is called by the utils.view_manager at the end of the model process
+        it is called by the utils.manager at the end of the model process
 
         Parameters
         ----------
@@ -234,21 +237,21 @@ class Presenter():
         module.parameters.path.setToolTip(filename+extension)
 
     # ----------------------------- MODEL CALL --------------------------------#
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_test_database_connection(self, module):
         function = self._model.request_database
         args = {'url': module.parameters.path.text()}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_extract_from_database(self, module):
         function = self._model.extract_from_database
         args = {"url": module.parameters.path.text(),
-                "table": utils.get_checked(module.parameters.tableNames)[0],
-                "columns": utils.get_checked(module.parameters.colnames)}
+                "table": module.parameters.tableNames.checkedButtonText(),
+                "columns": module.parameters.colnames.checkedButtonsText()}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_load_data(self, module):
         separator = module.parameters.separator.currentText()
         if separator == "{tabulation}":
@@ -266,7 +269,7 @@ class Presenter():
                 "sort": module.parameters.sort.isChecked()}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_describe(self, module):
         function = self._model.compute_stats
         args = {"df": utils.get_data(module.get_parent_names()[0]),
@@ -277,7 +280,7 @@ class Presenter():
                 "ignore_nan": module.parameters.ignore_nan.isChecked()}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_select_rows(self, module):
         function = self._model.select_rows
         args = {"df": utils.get_data(module.get_parent_names()[0]),
@@ -289,14 +292,14 @@ class Presenter():
                 "logical": utils.get_checked(module.parameters, ["or", "and"])[0]}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_select_columns(self, module):
         function = self._model.select_columns
         args = {"df": utils.get_data(module.get_parent_names()[0]),
                 "columns": utils.get_checked(module.parameters.grid)}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_operation(self, module):
         function = self._model.apply_formula
         args = {"df": utils.get_data(module.get_parent_names()[0]),
@@ -304,7 +307,7 @@ class Presenter():
                 "formula_name": module.name}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_standardize(self, module):
         type_dict, format_dict, unit_dict = {}, {}, {}
         for i in range(module.parameters.form.rowCount()):
@@ -325,14 +328,14 @@ class Presenter():
                 "unit_dict": unit_dict}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_save_data(self, module):
         function = self._model.save_data
         args = {"path": module.parameters.path.text(),
                 "dfs": [utils.get_data(n) for n in module.get_parent_names()]}
         return function, args
 
-    @utils.view_manager(True)
+    @utils.manager(True)
     def call_merge(self, module):
         function = self._model.merge
         args = {"dfs": [utils.get_data(n) for n in module.get_parent_names()],
