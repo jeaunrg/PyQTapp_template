@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>287</width>
-    <height>324</height>
+    <width>317</width>
+    <height>339</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,13 +51,13 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>263</width>
-        <height>234</height>
+        <width>293</width>
+        <height>249</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QGroupBox" name="groupBox">
+        <widget class="QGroupBox" name="groupBox_1">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>0</horstretch>
@@ -82,7 +82,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_2">
+        <widget class="QGroupBox" name="groupbox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
            <horstretch>0</horstretch>
@@ -138,6 +138,7 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
+            <layout class="QVBoxLayout" name="verticalLayout_5"/>
            </widget>
           </item>
           <item>

@@ -109,7 +109,6 @@ class Model():
     @utils.protector
     def load_data(self, path, separator="\t", decimal=",", header=None, encoding="latin-1", clean=True, sort=False):
         df = pd.read_csv(path, sep=separator, decimal=decimal, encoding=encoding, index_col=None, header=header)
-
         if clean:
             df = self.clean_dataframe(df)
         df = df.convert_dtypes()

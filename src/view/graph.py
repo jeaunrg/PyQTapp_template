@@ -1,143 +1,11 @@
-from PyQt5 import QtWidgets, QtCore, QtGui, uic
-from src.view import ui, utils
-from src import DESIGN_DIR, DEFAULT, RESULT_STACK
+from PyQt5 import QtWidgets, QtCore, QtGui
+from src.view import utils
+from src.view.graph_bricks import QGraphicsNode, QGraphicsLink
+from src import DEFAULT, RESULT_STACK
 import copy
-import os
-import pandas as pd
 
 
-class QCustomGraphicsNode(ui.QGraphicsNode):
-
-    def __init__(self, *args, **kwargs):
-        super(QCustomGraphicsNode, self).__init__(*args, **kwargs)
-
-        # add parameters widget
-        uifile_path = os.path.join(DESIGN_DIR, 'ui', 'modules', self.type+'.ui')
-        if not os.path.isfile(uifile_path):
-            print("{} does not exists".format(uifile_path))
-        else:
-            self.setParametersWidget(uifile_path)
-
-        # initialize
-        self._font = None
-
-    def updateHeight(self, force=False):
-        """
-        This function set the height of the widget to its minimum if the
-        result is not shown
-
-        Parameters
-        ----------
-        force: bool, default=False
-            if True, use a trick to force resize in extreme cases
-        """
-        if self.splitter.isHidden() or self.result.isHidden() or self.result.sizeHint() == QtCore.QSize(-1, -1):
-            if force:
-                width = self.width()
-                self.adjustSize()
-                self.resize(width, self.minimumHeight()+1)
-            self.resize(self.width(), 0)
-
-    def updateResult(self, result):
-        """
-        This function create widget from result and show it. The created widget
-        depends on the result type
-
-        Parameters
-        ----------
-        result: any type data
-
-        """
-        # create the output widget depending on output type
-        if result is None:
-            return
-        elif isinstance(result, Exception):
-            new_widget = QtWidgets.QWidget()
-            self.updateHeight(True)
-            # self.hideResult.hide()
-            self.maximizeResult.hide()
-        else:
-            if isinstance(result, (int, float, str, bool)):
-                new_widget = self.computeTextWidget(result)
-            elif isinstance(result, pd.DataFrame):
-                new_widget = self.computeTableWidget(result)
-            # self.hideResult.show()
-            self.maximizeResult.show()
-
-        # replace current output widget with the new one
-        self.result = utils.replaceWidget(self.result, new_widget)
-
-    def computeTextWidget(self, data):
-        """
-        This function create a QLabel widget with resizable font based on the
-        widget size
-
-        Parameters
-        ----------
-        data: float, int, str, bool
-
-        Return
-        ------
-        widget: QLabel
-
-        """
-        default_fontsize = 30
-        min_fontsize = 10
-
-        # set font
-        if self._font is None:
-            self._font = QtGui.QFont()
-            self._font.setPointSize(default_fontsize)
-
-        # set widget
-        widget = QtWidgets.QLabel(str(data))
-        widget.setAlignment(QtCore.Qt.AlignCenter)
-        widget.setFont(self._font)
-
-        # update fontsize to fit widget size
-        metric = QtGui.QFontMetrics(self._font)
-        ratio = metric.boundingRect(str(data)).size() / self._font.pointSize()
-
-        def fitFontSize():
-            if isinstance(self.result, QtWidgets.QLabel):
-                fontsize = max([min([self.result.width() / ratio.width(),
-                                     self.result.height() / ratio.height()]) - 10, min_fontsize])
-                self._font.setPointSize(fontsize)
-                self.result.setFont(self._font)
-        self.sizeChanged.connect(fitFontSize)
-        return widget
-
-    def computeTableWidget(self, data):
-        """
-        This function create a table widget which can be windowed
-
-        Parameters
-        ----------
-        data: pd.DataFrame
-
-        Return
-        ------
-        widget: QTableWidget
-
-        """
-        widget = uic.loadUi(os.path.join(DESIGN_DIR, 'ui', 'TableWidget.ui'))
-        widget.table.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Interactive)
-        widget.Vheader.addItems(['--'] + list(data.columns.astype(str)))
-
-        def updateVheader(index):
-            model = ui.PandasModel(data, index-1)
-            proxyModel = QtCore.QSortFilterProxyModel()
-            proxyModel.setSourceModel(model)
-            widget.table.setModel(proxyModel)
-        widget.Vheader.currentIndexChanged.connect(updateVheader)
-        updateVheader(0)
-
-        self.leftfoot.setText("{0} x {1}    ({2} {3})".format(*data.shape, *utils.getMemoryUsage(data)))
-
-        return widget
-
-
-class QCustomGraphicsView(QtWidgets.QGraphicsView):
+class QGraph(QtWidgets.QGraphicsView):
     """
     widget containing a view to display a tree-like architecture with nodes
     and branches
@@ -151,9 +19,9 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         horizontal is left to right, vertical is top to bottom
 
     """
-    nodeAdded = QtCore.pyqtSignal(QCustomGraphicsNode)
+    nodeAdded = QtCore.pyqtSignal(QGraphicsNode)
 
-    def __init__(self, mainwin, direction='horizontal'):
+    def __init__(self, mainwin, direction='vertical'):
         super().__init__()
         self._view = mainwin
         self.direction = direction
@@ -181,13 +49,10 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
             nodes to visually bind
         """
 
-        link = ui.QGraphicsLink(parent, child, **self._view.theme['arrow'])
+        link = QGraphicsLink(parent, child, **self._view.theme['arrow'])
 
         parent.positionChanged.connect(link.updatePos)
-        parent.sizeChanged.connect(link.updatePos)
         child.positionChanged.connect(link.updatePos)
-        child.sizeChanged.connect(link.updatePos)
-        child.sizeChanged.emit()
 
         parent.links.append(link)
         child.links.append(link)
@@ -233,7 +98,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
                     self.holdShift = False
                 elif event.key() == QtCore.Qt.Key_Control:
                     self.holdCtrl = False
-        return super(QCustomGraphicsView, self).eventFilter(obj, event)
+        return QtWidgets.QGraphicsView.eventFilter(self, obj, event)
 
     def unselectNodes(self):
         for node in self.nodes.values():
@@ -269,7 +134,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
 
         Parameters
         ----------
-        node: QCustomGraphicsNode, default None
+        node: QGraphicsNode, default None
             if None open a menu with primary actions (load, ...)
             else open a menu with secondary actions (erosion, ...)
 
@@ -298,8 +163,11 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         self._mouse_position = self.mapToScene(self.mapFromGlobal(pos))
         menu.exec_(QtGui.QCursor.pos())
 
+    def editNode(self, node, new_name=None, new_color=None):
+        self.renameNode(node, new_name)
+        self.colorizeNode(node, new_color)
+
     def renameNode(self, node, new_name=None):
-        # open input dialog
         if new_name is None:
             new_name, valid = QtWidgets.QInputDialog.getText(self, "user input", "new name",
                                                              QtWidgets.QLineEdit.Normal, node.type)
@@ -307,9 +175,14 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
                 return
         new_name = self.getUniqueName(new_name, exception=node.name)
         self.nodes[new_name] = self.nodes.pop(node.name)
-        node.rename(new_name)
         if node.name in RESULT_STACK:
             RESULT_STACK[new_name] = RESULT_STACK.pop(node.name)
+        node.rename(new_name)
+
+    def colorizeNode(self, node, new_color=None):
+        if new_color is None:
+            new_color = QtWidgets.QColorDialog.getColor()
+        node.setColor(new_color)
 
     def deleteBranch(self, parent, childs_only=False):
         """
@@ -317,7 +190,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
 
         Parameters
         ----------
-        parent: QCustomGraphicsNode
+        parent: QGraphicsNode
         child_only: bool, default=False
             if True do not delete the parent node else delete parent and children
 
@@ -345,7 +218,7 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
         ----------
         type: str
             type of node
-        parents: list of QCustomGraphicsNode or QCustomGraphicsNode
+        parents: list of QGraphicsNode or QGraphicsNode
 
         """
         if parents is None:
@@ -358,21 +231,29 @@ class QCustomGraphicsView(QtWidgets.QGraphicsView):
                 parents[i] = self.nodes[parent]
 
         name = self.getUniqueName(type)
-        node = QCustomGraphicsNode(self, type, name, parents)
+        node = QGraphicsNode(self, type, name, parents)
         node.addToScene(self.scene)
 
         if not parents:
             x, y = self._mouse_position.x(), self._mouse_position.y()
         else:
             max_x_parent = parents[0]
+            max_y_parent = parents[0]
             for parent in parents:
                 if parent.pos().x() > max_x_parent.pos().x():
                     max_x_parent = parent
+                if parent.pos().y() > max_y_parent.pos().y():
+                    max_y_parent = parent
                 self.bind(parent, node)
                 parent.childs.append(node)
-            Ys = [c.pos().y() + c.height() for c in max_x_parent.childs if c is not node]
-            x = max_x_parent.pos().x() + max_x_parent.width() + DEFAULT['space_between_nodes'][0]
-            y = max_x_parent.pos().y() if not Ys else max(Ys) + DEFAULT['space_between_nodes'][1]
+            if self.direction == 'vertical':
+                Xs = [c.pos().x() + c.width() for c in max_y_parent.childs if c is not node]
+                x = max_y_parent.pos().x() if not Xs else max(Xs) + DEFAULT['space_between_nodes'][0]
+                y = max_y_parent.pos().y() + max_y_parent.height() + DEFAULT['space_between_nodes'][1]
+            else:
+                Ys = [c.pos().y() + c.height() for c in max_x_parent.childs if c is not node]
+                x = max_x_parent.pos().x() + max_x_parent.width() + DEFAULT['space_between_nodes'][0]
+                y = max_x_parent.pos().y() if not Ys else max(Ys) + DEFAULT['space_between_nodes'][1]
 
         # set state
         if position is not None:

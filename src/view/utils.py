@@ -79,7 +79,8 @@ def getMemoryUsage(object):
 
 
 def getValue(widget):
-    if isinstance(widget, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
+    if isinstance(widget, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)) or \
+       isinstance(widget, QtWidgets.QPushButton) and widget.isCheckable():
         return widget.isChecked()
     elif isinstance(widget, QtWidgets.QLineEdit):
         return widget.text()
@@ -90,12 +91,15 @@ def getValue(widget):
 
 
 def setValue(widget, value):
-    if isinstance(widget, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)):
+    if isinstance(widget, (QtWidgets.QCheckBox, QtWidgets.QRadioButton)) or \
+       isinstance(widget, QtWidgets.QPushButton) and widget.isCheckable():
         widget.setChecked(value)
     elif isinstance(widget, QtWidgets.QLineEdit):
         widget.setText(value)
+        widget.editingFinished.emit()
     elif isinstance(widget, QtWidgets.QComboBox):
         widget.setCurrentText(value)
+        widget.currentTextChanged.emit(value)
     elif isinstance(widget, ui.QFormatLine):
         setValue(widget.types, value[0])
         setValue(widget.format, value[1])

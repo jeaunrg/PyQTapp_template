@@ -1,6 +1,6 @@
 import json
 import os
-from src import RESULT_STACK, DATA_DIR, OUT_DIR, CONFIG_DIR
+from src import DATA_DIR, OUT_DIR, CONFIG_DIR
 from src.utils import ceval, empty_to_none
 from src.view.utils import replaceWidget
 from src.presenter import utils
@@ -54,6 +54,7 @@ class Presenter():
         except AttributeError as e:
             print(e)
 
+        module.saveDataClicked.connect(lambda: self.call_save_data(module))
         self.init_modules_custom_connections(module)
 
     def init_modules_custom_connections(self, module):
@@ -65,8 +66,9 @@ class Presenter():
             module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
             module.parameters.path.editingFinished.connect(lambda: self.update_sql_module(module))
             module.parameters.browse.clicked.connect(lambda s: self.update_sql_module(module))
-            module.parameters.tableNames = replaceWidget(module.parameters.tableNames, ui.QGridButtonGroup(3))
-            module.parameters.colnames = replaceWidget(module.parameters.colnames, ui.QGridButtonGroup(3))
+            module.parameters.tableNames = replaceWidget(module.parameters.tableNames, ui.QGridButtonGroup())
+            module.parameters.colnames = replaceWidget(module.parameters.colnames, ui.QGridButtonGroup())
+            module.parameters.groupbox.hide()
 
         elif module.type == "save":
             module.parameters.browse.clicked.connect(lambda: self.browse_savepath(module))
@@ -143,12 +145,22 @@ class Presenter():
                     line = ui.QFormatLine()
                     module.parameters.form.addRow(QtWidgets.QLabel(colname), line)
                     module.parameters.__dict__['format_line_{}'.format(i)] = line
-                module.resize(module.parameters.form.sizeHint().width()+50, module.height())
 
         module.setSettings(self._view.settings['graph'].get(module.name))
 
     def update_sql_module(self, module):
+        database_description = self._model.describe_database(module.parameters.path.text())
 
+        # test connection
+        if isinstance(database_description, Exception):
+            return self.call_test_database_connection(module)
+
+        # create table grid
+        grid = ui.QGridButtonGroup(3)
+        module.parameters.tableNames = replaceWidget(module.parameters.tableNames, grid)
+        grid.addWidgets(QtWidgets.QRadioButton, database_description['name'])
+
+        # update table colnames
         def update_columns(button, state):
             if state:
                 colnames_grid = ui.QGridButtonGroup(3)
@@ -157,22 +169,13 @@ class Presenter():
                     table_description = self._model.describe_table(module.parameters.path.text(), button.text())
                     colnames_grid.addWidgets(QtWidgets.QPushButton, table_description['name'])
                     colnames_grid.checkAll()
+                module.parameters.groupbox.show()
+                module.parameters.selectAll.toggled.connect(module.parameters.colnames.checkAll)
 
-        database_description = self._model.describe_database(module.parameters.path.text())
-        # test connection
-        if isinstance(database_description, Exception):
-            return self.call_test_database_connection(module)
-
-        grid = ui.QGridButtonGroup(3)
-        grid.addWidgets(QtWidgets.QRadioButton, database_description['name'])
-        module.parameters.tableNames = replaceWidget(module.parameters.tableNames, grid)
         grid.group.buttonToggled.connect(update_columns)
         grid.checkFirst()
 
-        module.parameters.selectAll.toggled.connect(module.parameters.colnames.checkAll)
-
     # --------------------- PRIOR  AND POST FUNCTION CALL ---------------------#
-
     def prior_manager(self, module):
         """
         This method is called by the utils.manager before of the function call
@@ -181,9 +184,7 @@ class Presenter():
         ----------
         module: QWidget
         """
-        module.loading.setMaximum(0)  # activate eternal loading
-        module.lefthead.clear()
-        module.lefthead.setToolTip(None)
+        module.setState('loading')
 
     def post_manager(self, module, output):
         """
@@ -195,12 +196,12 @@ class Presenter():
         module: QWidget
         output: exception, str, pd.DataFrame, np.array, ...
         """
-        RESULT_STACK[module.name] = output
+        if output is not None:
+            utils.store_data(module.name, output)
         if isinstance(output, Exception):
-            module.lefthead.setToolTip("[{0}] {1}".format(type(output).__name__, output))
-            module.lefthead.setPixmap(self._view._fail)
+            module.setState('fail', "[{0}] {1}".format(type(output).__name__, output))
         else:
-            module.lefthead.setPixmap(self._view._valid)
+            module.setState('valid')
 
         module.updateResult(output)
         for child in module.childs:
@@ -209,8 +210,8 @@ class Presenter():
         # stop loading if one process is still running (if click multiple time
         # on the same button)
         are_running = [r.isRunning() for r in module._runners]
-        if not any(are_running):
-            module.loading.setMaximum(1)  # deactivate eternal loading
+        if any(are_running):
+            module.setState('loading')
 
     # ----------------------------- utils -------------------------------------#
     def browse_data(self, module):
@@ -270,6 +271,27 @@ class Presenter():
         return function, args
 
     @utils.manager(True)
+    def call_standardize(self, module):
+        type_dict, format_dict, unit_dict = {}, {}, {}
+        for i in range(module.parameters.form.rowCount()):
+            label = module.parameters.form.itemAt(i, 0).widget().text()
+            hbox = module.parameters.form.itemAt(i, 1).widget().layout()
+            type_dict[label] = hbox.itemAt(0).widget().currentText()
+            if type_dict[label] == 'datetime':
+                format_dict[label] = hbox.itemAt(1).widget().text()
+            if type_dict[label] == 'timedelta':
+                unit_dict[label] = hbox.itemAt(2).widget().currentText()
+            if type_dict[label] == '--':
+                type_dict[label] = ''
+
+        function = self._model.standardize
+        args = {"df": utils.get_data(module.get_parent_names()[0]),
+                "type_dict": type_dict,
+                "format_dict": format_dict,
+                "unit_dict": unit_dict}
+        return function, args
+
+    @utils.manager(True)
     def call_describe(self, module):
         function = self._model.compute_stats
         args = {"df": utils.get_data(module.get_parent_names()[0]),
@@ -308,31 +330,17 @@ class Presenter():
         return function, args
 
     @utils.manager(True)
-    def call_standardize(self, module):
-        type_dict, format_dict, unit_dict = {}, {}, {}
-        for i in range(module.parameters.form.rowCount()):
-            label = module.parameters.form.itemAt(i, 0).widget().text()
-            hbox = module.parameters.form.itemAt(i, 1).widget().layout()
-            type_dict[label] = hbox.itemAt(0).widget().currentText()
-            if type_dict[label] == 'datetime':
-                format_dict[label] = hbox.itemAt(1).widget().text()
-            if type_dict[label] == 'timedelta':
-                unit_dict[label] = hbox.itemAt(2).widget().currentText()
-            if type_dict[label] == '--':
-                type_dict[label] = ''
-
-        function = self._model.standardize
-        args = {"df": utils.get_data(module.get_parent_names()[0]),
-                "type_dict": type_dict,
-                "format_dict": format_dict,
-                "unit_dict": unit_dict}
-        return function, args
-
-    @utils.manager(True)
     def call_save_data(self, module):
         function = self._model.save_data
-        args = {"path": module.parameters.path.text(),
-                "dfs": [utils.get_data(n) for n in module.get_parent_names()]}
+        if module.type == 'save':
+            args = {"path": module.parameters.path.text(),
+                    "dfs": [utils.get_data(n) for n in module.get_parent_names()]}
+        else:
+            path = os.path.join(OUT_DIR, module.name + '.csv')
+            args = {"path": path,
+                    "dfs": [utils.get_data(module.name)]}
+            module.result.path.setText(path)
+            module.result.leftfoot.show()
         return function, args
 
     @utils.manager(True)

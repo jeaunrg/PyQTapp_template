@@ -87,7 +87,7 @@ class View(QtWidgets.QMainWindow):
         self.setTabPosition(QtCore.Qt.LeftDockWidgetArea, QtWidgets.QTabWidget.East)
 
         self.settings = {'graph': {}}
-        self.graph = graph.QCustomGraphicsView(self, 'horizontal')
+        self.graph = graph.QGraph(self, 'vertical')
         self.setCentralWidget(self.graph)
         self.setWindowState(QtCore.Qt.WindowActive)
 
@@ -118,7 +118,7 @@ class View(QtWidgets.QMainWindow):
 
         self.modules[moduleName] = module
 
-    def addWidgetInDock(self, widget, side=QtCore.Qt.RightDockWidgetArea):
+    def addWidgetInDock(self, widget, side=QtCore.Qt.RightDockWidgetArea, unique=True):
         """
         put widget inside a qdock widget
 
@@ -131,21 +131,25 @@ class View(QtWidgets.QMainWindow):
         dock: QDockWidget
 
         """
-        dock = QtWidgets.QDockWidget()
-        dock.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
-        dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
-        dock.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
+        if unique and isinstance(widget.parent(), QtWidgets.QDockWidget):
+            dock = widget.parent()
+            self.restoreDockWidget(dock)
+        else:
+            dock = QtWidgets.QDockWidget()
+            # dock.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
+            dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
+            dock.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
 
-        docks = self.findChildren(QtWidgets.QDockWidget)
+            docks = self.findChildren(QtWidgets.QDockWidget)
 
-        dock.setWidget(widget)
-        self.addDockWidget(side, dock)
+            dock.setWidget(widget)
+            self.addDockWidget(side, dock)
 
-        # tabify dock to existant docks
-        for dk in docks:
-            if self.dockWidgetArea(dk) == side:
-                self.tabifyDockWidget(dk, dock)
-                break
+            # tabify dock to existant docks
+            for dk in docks:
+                if self.dockWidgetArea(dk) == side:
+                    self.tabifyDockWidget(dk, dock)
+                    break
 
         dock.show()
         dock.raise_()
