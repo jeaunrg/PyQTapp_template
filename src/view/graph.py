@@ -181,7 +181,7 @@ class QGraph(QtWidgets.QGraphicsView):
 
     def colorizeNode(self, node, new_color=None):
         if new_color is None:
-            new_color = QtWidgets.QColorDialog.getColor()
+            new_color = QtWidgets.QColorDialog.getColor(node.color)
         node.setColor(new_color)
 
     def deleteBranch(self, parent, childs_only=False):

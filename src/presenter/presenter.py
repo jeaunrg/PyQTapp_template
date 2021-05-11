@@ -54,6 +54,8 @@ class Presenter():
         except AttributeError as e:
             print(e)
 
+        module.setColor(parameters.get('color'))
+
         module.saveDataClicked.connect(lambda: self.call_save_data(module))
         self.init_modules_custom_connections(module)
 
@@ -146,6 +148,28 @@ class Presenter():
                     module.parameters.form.addRow(QtWidgets.QLabel(colname), line)
                     module.parameters.__dict__['format_line_{}'.format(i)] = line
 
+            elif module.type == "timeEventFitting":
+                for cb in [module.parameters.event, module.parameters.params]:
+                    cb.clear()
+                    cb.addItems(module.get_parent_names())
+                cb.setEnabled(False)
+
+                def fillCombos(eventId):
+                    paramsId = int(not eventId)
+                    module.parameters.params.setCurrentIndex(paramsId)
+                    module.parameters.groupBy.clear()
+                    module.parameters.groupBy.addItems([''] + parent_colnames[paramsId])
+                    for cb in [module.parameters.paramsOn, module.parameters.paramsDatetime,
+                               module.parameters.paramsValue]:
+                        cb.clear()
+                        cb.addItems(parent_colnames[paramsId])
+                    for cb in [module.parameters.eventOn, module.parameters.eventDatetime,
+                               module.parameters.eventName]:
+                        cb.clear()
+                        cb.addItems(parent_colnames[eventId])
+
+                module.parameters.event.currentIndexChanged.connect(fillCombos)
+                module.parameters.event.currentIndexChanged.emit(0)
         module.setSettings(self._view.settings['graph'].get(module.name))
 
     def update_sql_module(self, module):
@@ -354,4 +378,18 @@ class Presenter():
                 "left_index": module.parameters.left_index.isChecked(),
                 "right_index": module.parameters.right_index.isChecked(),
                 "sort": ceval(module.parameters.suffixes.text())}
+        return function, args
+
+    @utils.manager(True)
+    def call_fit_closest_event(self, module):
+        function = self._model.fit_closest_event
+        args = {"ref": utils.get_data(module.parameters.event.currentText()),
+                "ref_datetime_colname": module.parameters.eventDatetime.currentText(),
+                "ref_param_colname": module.parameters.eventName.currentText(),
+                "data": utils.get_data(module.parameters.params.currentText()),
+                "datetime_colname": module.parameters.paramsDatetime.currentText(),
+                "value_colname": module.parameters.paramsValue.currentText(),
+                "groupby": module.parameters.groupBy.currentText(),
+                "on": module.parameters.eventOn.currentText()
+                }
         return function, args

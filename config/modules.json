@@ -1,55 +1,65 @@
 {
     "loadCSV": {
         "type": "primary",
-        "function": "call_load_data"
+        "function": "call_load_data",
+        "color": [193, 25, 28, 255]
     },
     "SQLrequest": {
         "type": "primary",
-        "function": "call_extract_from_database"
+        "function": "call_extract_from_database",
+        "color": [184, 23, 136, 255]
     },
 
     "standardize": {
         "type": "secondary",
         "menu": "basics",
-        "function": "call_standardize"
+        "function": "call_standardize",
+        "color": [41, 159, 90, 255]
     },
     "describe": {
         "type": "secondary",
         "menu": "basics",
-        "function": "call_describe"
+        "function": "call_describe",
+        "color": [29, 153, 159, 255]
     },
     "selectRows": {
         "type": "secondary",
         "menu": "basics",
-        "function": "call_select_rows"
+        "function": "call_select_rows",
+        "color": [13, 135, 200, 255]
     },
     "selectColumns": {
         "type": "secondary",
         "menu": "basics",
-        "function": "call_select_columns"
+        "function": "call_select_columns",
+        "color": [48, 22, 177, 255]
     },
 
     "operation": {
         "type": "secondary",
         "menu": "basics",
-        "function": "call_operation"
+        "function": "call_operation",
+        "color": [148, 170, 71, 255]
     },
 
     "merge": {
         "type": "secondary",
         "menu": "advanced",
-        "function": "call_merge"
+        "function": "call_merge",
+        "color": [193, 127, 13, 255]
     },
 
-    "transfusion": {
+    "timeEventFitting": {
         "type": "secondary",
         "menu": "research",
-        "function": "call_compute_transfusion"
+        "function": "call_fit_closest_event",
+        "color": [180, 30, 45, 255]
     },
 
     "save": {
         "type": "secondary",
-        "function": "call_save_data"
+        "function": "call_save_data",
+        "color": [167, 98, 139, 255]
     },
 
     "delete": {

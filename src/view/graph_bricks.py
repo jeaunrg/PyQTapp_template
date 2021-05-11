@@ -35,6 +35,7 @@ class QGraphicsNode(QtWidgets.QWidget):
         self.parents = parents
         self.childs = []
         self.links = []
+        self.color = None
 
         self.last_position = QtCore.QPointF(0, 0)
         self.initialPosition = None
@@ -64,7 +65,7 @@ class QGraphicsNode(QtWidgets.QWidget):
         self.result = QtWidgets.QWidget()
         self.initConnections()
 
-        self.resize(1, 1)  # never resize to 0
+        self.resize(250, 1)  # never resize to 0
 
     def resizeEvent(self, event):
         rect = self._item.rect()
@@ -201,11 +202,14 @@ class QGraphicsNode(QtWidgets.QWidget):
         self.name = new_name
 
     def setColor(self, new_color):
+        if isinstance(new_color, list):
+            new_color = QtGui.QColor(*new_color)
         pal = QtGui.QPalette()
         pal.setColor(QtGui.QPalette.Background, new_color)
         for w in [self.header, self.footer]:
             w.setAutoFillBackground(True)
             w.setPalette(pal)
+        self.color = new_color
 
     def addWidgetInDock(self, widget, side, unique=True):
         if widget is None:

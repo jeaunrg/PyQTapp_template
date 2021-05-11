@@ -150,7 +150,7 @@ class Model():
         return d
 
     @utils.protector
-    def standardize(self, df, type_dict, format_dict, unit_dict):
+    def standardize(self, df, type_dict, format_dict={}, unit_dict={}):
         types = {'': None, 'integer': np.int64, 'float': np.float64, 'boolean': bool,
                  'string': str, 'datetime': datetime, 'timedelta': timedelta}
         for colname in type_dict:
@@ -280,3 +280,56 @@ class Model():
                 df.to_csv(path+"_{}".format(i), sep='\t', decimal=",", encoding="latin-1")
             else:
                 df.to_csv(path, sep='\t', decimal=",", encoding="latin-1")
+
+    @utils.protector
+    def fit_closest_event(self, ref, ref_datetime_colname, ref_param_colname, data, datetime_colname, value_colname,
+                          on, delta=['before', 'after'], groupby=None, column_prefix=""):
+        left_on, right_on = on, on
+        if groupby is not None:
+            outdf = pd.DataFrame()
+            data = data.set_index(groupby)
+            params = np.unique(data.index)
+            for param in params:
+                out = self.fit_closest_event(ref, ref_datetime_colname, ref_param_colname, data.loc[param],
+                                             datetime_colname, value_colname, on, delta, column_prefix=param)
+                outdf = pd.concat([outdf, out], axis=1)
+        else:
+            outdf = {}
+
+            data_names = np.unique(data[right_on])
+
+            ref = ref.set_index(left_on)
+            ref = ref[[ref_datetime_colname, ref_param_colname]]
+
+            data = data.set_index([right_on, datetime_colname])
+            data = data[value_colname]
+
+            for name in np.unique(ref.index):
+                if name not in data_names:
+                    continue
+                subref = ref.loc[[name]]
+                subdata = data.loc[name]
+                subdata = subdata[~subdata.index.duplicated(keep='first')].sort_index()
+
+                for i in range(len(subref.index)):
+                    refdate, refparam = subref.iloc[i]
+                    d = {}
+                    if 'before' in delta:
+                        try:
+                            ind_before = subdata.index.get_loc(refdate, method='ffill')
+                            d["_".join([column_prefix, "value before"])] = subdata.iloc[ind_before]
+                            d["_".join([column_prefix, "delay before"])] = refdate - subdata.index[ind_before]
+                        except KeyError:
+                            pass
+                    if 'after' in delta:
+                        try:
+                            ind_after = subdata.index.get_loc(refdate, method='backfill')
+                            d["_".join([column_prefix, "value after"])] = subdata.iloc[ind_after]
+                            d["_".join([column_prefix, "delay after"])] = subdata.index[ind_after] - refdate
+                        except KeyError:
+                            pass
+                    outdf[(name, refparam, refdate)] = d
+
+            outdf = pd.DataFrame.from_dict(outdf, orient='index')
+
+        return outdf
