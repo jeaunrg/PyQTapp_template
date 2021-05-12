@@ -54,18 +54,14 @@ class QGraphicsNode(QtWidgets.QWidget):
 
         self.grap = utils.replaceWidget(self.grap, ui.QGrap())
         self.openButton.setText(name)
-        self.loading.setStyleSheet("QProgressBar { max-height: 2px; \
-                                    background-color: transparent; \
-                                    border-color: transparent; }")
-        self.setState()
-
         self._item.setRect(QtCore.QRectF(self.geometry().adjusted(0, 0, 0, 0)))
 
         self.parameters = uic.loadUi(os.path.join(DESIGN_DIR, 'ui', 'modules', self.type+'.ui'))
         self.result = QtWidgets.QWidget()
-        self.initConnections()
 
         self.resize(250, 1)  # never resize to 0
+        self.initConnections()
+        self.setState()
 
     def resizeEvent(self, event):
         rect = self._item.rect()
@@ -164,11 +160,12 @@ class QGraphicsNode(QtWidgets.QWidget):
         """
         delete itself and all related graphic items (links and junctions)
         """
-        for link in self.links:
-            link.delete()
-            self.graph.scene.removeItem(link)
+        # delete links
+        while self.links:
+            self.graph.scene.removeItem(self.links[0])
+            self.links[0].delete()
 
-        # delete whild widget if in dock
+        # delete wild widget if in dock
         if isinstance(self.parameters.parent(), QtWidgets.QDockWidget):
             self.parameters.parent().close()
         if isinstance(self.result.parent(), QtWidgets.QDockWidget):

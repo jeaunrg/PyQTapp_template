@@ -5,6 +5,8 @@ from src import DEFAULT, RESULT_STACK
 import copy
 
 
+# stack under, raise, show
+
 class QGraph(QtWidgets.QGraphicsView):
     """
     widget containing a view to display a tree-like architecture with nodes
