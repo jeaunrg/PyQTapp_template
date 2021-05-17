@@ -25,6 +25,12 @@ class Runner(QtCore.QThread):
         self.out = self._target(*self._args, **self._kwargs)
 
 
+def deleteRunner(module, runner):
+    module._runners.remove(runner)
+    del runner.out
+    del runner
+
+
 def manager(threadable=True):
     """
     this decorator manage threading
@@ -39,18 +45,31 @@ def manager(threadable=True):
         def inner(presenter, module):
             presenter.prior_manager(module)
             function, args = foo(presenter, module)
+            function = protector(function)
 
             # start the process inside a QThread
             if threadable and presenter.threading_enabled:
                 runner = Runner(function, **args)
                 module._runners.append(runner)
                 runner.finished.connect(lambda: (presenter.post_manager(module, runner.out),
-                                                 module._runners.remove(runner)))
+                                                 deleteRunner(module, runner)))
                 runner.start()
             else:
                 presenter.post_manager(module, function(**args))
         return inner
     return decorator
+
+
+def protector(foo):
+    """
+    function used as decorator to avoid the app to crash because of basic errors
+    """
+    def inner(*args, **kwargs):
+        try:
+            return foo(*args, **kwargs)
+        except Exception as e:
+            return e
+    return inner
 
 
 def get_data(name):

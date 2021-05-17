@@ -1,20 +1,9 @@
 import sqlite3
 import pandas as pd
+import numpy as np
 
 
-def protector(foo):
-    """
-    function used as decorator to avoid the app to crash because of basic errors
-    """
-    def inner(*args, **kwargs):
-        try:
-            return foo(*args, **kwargs)
-        except Exception as e:
-            return e
-    return inner
-
-
-def to_datetime(arg, formats):
+def to_datetime(arg, formats, force=False):
     res = []
     for v in arg:
         fit_format = False
@@ -26,7 +15,10 @@ def to_datetime(arg, formats):
             except ValueError:
                 continue
         if not fit_format:
-            raise ValueError("time data {} does not match any format".format(v))
+            if force:
+                res.append(np.nan)
+            else:
+                raise ValueError("time data {} does not match any format".format(v))
     return res
 
 

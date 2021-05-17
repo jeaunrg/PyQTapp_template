@@ -88,6 +88,8 @@ def getValue(widget):
         return widget.currentText()
     elif isinstance(widget, ui.QFormatLine):
         return [getValue(widget.types), getValue(widget.format), getValue(widget.unit)]
+    elif isinstance(widget, ui.QGridButtonGroup):
+        return widget.checkedButtonsText()
 
 
 def setValue(widget, value):
@@ -104,3 +106,7 @@ def setValue(widget, value):
         setValue(widget.types, value[0])
         setValue(widget.format, value[1])
         setValue(widget.unit, value[2])
+    elif isinstance(widget, ui.QGridButtonGroup):
+        for button in widget.group.buttons():
+            if button.text() in value:
+                setValue(button, True)

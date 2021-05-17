@@ -59,6 +59,10 @@ class QGraphicsNode(QtWidgets.QWidget):
         self.parameters = uic.loadUi(os.path.join(DESIGN_DIR, 'ui', 'modules', self.type+'.ui'))
         self.result = QtWidgets.QWidget()
 
+        self.loading.setStyleSheet("QProgressBar { \
+                                    background-color: transparent; \
+                                    border-color: transparent; }")
+
         self.resize(250, 1)  # never resize to 0
         self.initConnections()
         self.setState()
@@ -117,7 +121,7 @@ class QGraphicsNode(QtWidgets.QWidget):
         self._item.setZValue(1)
         return QtWidgets.QWidget.leaveEvent(self, event)
 
-    def setState(self, state=None, msg=None):
+    def setState(self, state=None):
         if state == 'loading' or state is None:
             col = QtGui.QColor(0, 0, 0, 0)
         elif state == 'valid':
@@ -224,7 +228,7 @@ class QGraphicsNode(QtWidgets.QWidget):
                 utils.setValue(w, settings['parameters'][name])
 
         state = settings['state']
-        self.graph.editNode(self, state['name'])
+        self.graph.editNode(self, state['name'], state['color'])
 
     def getSettings(self):
         settings = {'parameters': {}}
@@ -235,7 +239,8 @@ class QGraphicsNode(QtWidgets.QWidget):
         settings['state'] = {'name': self.name,
                              'type': self.type,
                              'parents': [p.name for p in self.parents],
-                             'position': self.pos()}
+                             'position': [self.pos().x(), self.pos().y()],
+                             'color': [self.color.red(), self.color.green(), self.color.blue(), self.color.alpha()]}
         return settings
 
     def openParameters(self):

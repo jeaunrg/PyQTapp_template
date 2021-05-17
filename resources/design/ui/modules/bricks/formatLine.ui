@@ -74,7 +74,7 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;You can add multiple time format&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; text-decoration: underline;&quot;&gt;with 'OR' between each one&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;EX: &amp;quot;%d/%m/%Y %H:%M OR %d/%m/%Y&amp;quot;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Seconds&lt;/span&gt;: %S&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Minutes&lt;/span&gt;: %M&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Hour&lt;/span&gt;&lt;/p&gt;&lt;p&gt;%H: from 00 to 23&lt;/p&gt;&lt;p&gt;%I: from 00 to 12&lt;/p&gt;&lt;p&gt;%p: AM/PM&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Day of the week&lt;/span&gt;&lt;/p&gt;&lt;p&gt;%a: from Mon to Sun&lt;/p&gt;&lt;p&gt;%A: from Monday to Sunday&lt;/p&gt;&lt;p&gt;%w: from 0 to 6&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Day of the month&lt;/span&gt;&lt;/p&gt;&lt;p&gt;%d: from 01 to 31&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Month&lt;/span&gt;&lt;/p&gt;&lt;p&gt;%b: from Jan to Dec&lt;/p&gt;&lt;p&gt;%B: from January to December&lt;/p&gt;&lt;p&gt;%m: from 01 to 12&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Year&lt;/span&gt;&lt;/p&gt;&lt;p&gt;%y: from 00 to 99&lt;/p&gt;&lt;p&gt;%Y: 1999, 2000, ...&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
-      <string>%d/%m/%y %H:%M OR %d/%m/%y</string>
+      <string>%Y-%m-%d %H:%M:%S OR %d/%m/%y %H:%M OR %d/%m/%y OR %d/%m/%Y %H:%M OR %d/%m/%Y</string>
      </property>
      <property name="clearButtonEnabled">
       <bool>true</bool>
@@ -123,6 +123,13 @@
        <string>nanosecond</string>
       </property>
      </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="force">
+     <property name="text">
+      <string>force</string>
+     </property>
     </widget>
    </item>
   </layout>

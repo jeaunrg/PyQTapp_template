@@ -34,9 +34,11 @@ class QGraph(QtWidgets.QGraphicsView):
         self.contextMenuEvent = lambda e: self.openMenu()
         self.setBackgroundBrush(eval(self._view.theme['background_brush']))
 
+        self.selectAll = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+A'), self)
+        self.selectAll.activated.connect(self.selectNodes)
+
         self.installEventFilter(self)
         self.holdShift = False
-        self.holdCtrl = False
         self._mouse_position = QtCore.QPoint(0, 0)
         self.nodes = {}
         self.focus = None
@@ -94,17 +96,23 @@ class QGraph(QtWidgets.QGraphicsView):
                 if event.key() == QtCore.Qt.Key_Shift:
                     self.holdShift = True
                 elif event.key() == QtCore.Qt.Key_Control:
-                    self.holdCtrl = True
+                    self.setDragMode(QtWidgets.QGraphicsView.ScrollHandDrag)
             elif event.type() == QtCore.QEvent.KeyRelease:
                 if event.key() == QtCore.Qt.Key_Shift:
                     self.holdShift = False
                 elif event.key() == QtCore.Qt.Key_Control:
-                    self.holdCtrl = False
+                    self.setDragMode(QtWidgets.QGraphicsView.NoDrag)
         return QtWidgets.QGraphicsView.eventFilter(self, obj, event)
 
     def unselectNodes(self):
         for node in self.nodes.values():
             node.selected.setChecked(False)
+
+    def selectNodes(self, nodes=None):
+        if nodes is None:
+            nodes = self.nodes
+        for node in nodes.values():
+            node.selected.setChecked(True)
 
     def getUniqueName(self, name, exception=None):
         """
@@ -144,11 +152,11 @@ class QGraph(QtWidgets.QGraphicsView):
         node = self.focus
         if node is None:
             acts = self._view.menu.get('primary')
-            nodes = []
+            parents = []
         else:
             acts = self._view.menu.get('secondary')
-            nodes = [node] + self.getSelectedNodes()
-            nodes = list(set(nodes))
+            parents = [node] + self.getSelectedNodes()
+            parents = list(set(parents))
 
         if acts is None:
             return
@@ -156,9 +164,21 @@ class QGraph(QtWidgets.QGraphicsView):
         def activate(action):
             type = action.text()
             if type in ["delete", "delete all"]:
-                self.deleteBranch(node)
+                for p in parents:
+                    self.deleteBranch(p)
             else:
-                self.addNode(action.text(), nodes)
+                nparents = self._view.modules_parameters[action.text()]['nparents']
+                if not parents:
+                    self.addNode(action.text())
+                else:
+                    if parents and nparents in [1, None]:
+                        for p in parents:
+                            self.addNode(action.text(), [p])
+                    elif nparents == -1 or nparents == len(parents):
+                        self.addNode(action.text(), parents)
+                    else:
+                        self._view.setStatusTip("This node must have {0} \
+                                                 parents, got {1}".format(nparents, len(parents)))
 
         menu = utils.menu_from_dict(acts, activation_function=activate)
         pos = QtGui.QCursor.pos()
@@ -184,7 +204,8 @@ class QGraph(QtWidgets.QGraphicsView):
     def colorizeNode(self, node, new_color=None):
         if new_color is None:
             new_color = QtWidgets.QColorDialog.getColor(node.color)
-        node.setColor(new_color)
+        if isinstance(new_color, list) or new_color.isValid():
+            node.setColor(new_color)
 
     def deleteBranch(self, parent, childs_only=False):
         """
@@ -197,6 +218,8 @@ class QGraph(QtWidgets.QGraphicsView):
             if True do not delete the parent node else delete parent and children
 
         """
+        if parent.name not in self.nodes:
+            return
         # delete data
         if parent.name in RESULT_STACK:
             del RESULT_STACK[parent.name]
@@ -259,11 +282,13 @@ class QGraph(QtWidgets.QGraphicsView):
 
         # set state
         if position is not None:
-            x, y = position.x(), position.y()
+            x, y = position
 
         node.moveBy(x, y)
         self.nodes[name] = node
         self.nodeAdded.emit(node)
+
+        node.setColor(self._view.modules_parameters[type]['color'])
         return node
 
     def setSettings(self, settings):

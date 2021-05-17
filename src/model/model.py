@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 class Model():
 
-    @utils.protector
     def request_database(self, url, cmd=None):
         pysql = utils.PySQL(url)
         pysql.connect()
@@ -18,44 +17,20 @@ class Model():
         pysql.close()
         return outdf
 
-    @utils.protector
     def describe_database(self, url):
         cmd = "SELECT * FROM sqlite_master WHERE type='table'"
         return self.request_database(url, cmd)
 
-    @utils.protector
     def describe_table(self, url, table_name):
         cmd = "PRAGMA table_info({})".format(table_name)
         return self.request_database(url, cmd)
 
-    @utils.protector
     def extract_from_database(self, url, table, columns):
         if table is None:
             raise ValueError("Empty table")
         cmd = "SELECT [{0}] FROM {1}".format("], [".join(columns), table)
         return self.request_database(url, cmd)
 
-    @utils.protector
-    def computeTransfusion(self, df, groupby, time_colname, value_colname, normalize_time=True, time_format=None):
-        # df = df[[groupby, time_colname, value_colname]]
-        df = self.standardize(df, {time_colname: ('time', time_format), value_colname: 'float'})
-        if isinstance(df, Exception):
-            return df
-        if normalize_time:
-            min_time = self.compute_stats(df, time_colname, groupBy=[groupby], statistics=["minimum"],
-                                          ignore_nan=True, out_as_dict=False)
-            if isinstance(min_time, Exception):
-                return min_time
-            df = self.merge([df, min_time], on=groupby)
-            if isinstance(df, Exception):
-                return df
-            df["delay from earliest date"] = df[time_colname] - df["minimum"]
-            time_colname = "delay from earliest date"
-
-        # plot(df, x=time_colname, y=value_colname, groupby=groupby)
-        return df
-
-    @utils.protector
     def plot(self, df, X, Y, Z, xlabel, ylabel, zlabel, xlim, ylim, zlim, groupby):
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -77,14 +52,12 @@ class Model():
 
         return ax
 
-    @utils.protector
     def merge(self, dfs, *args, **kwargs):
         outdf = copy.copy(dfs[0])
         for df in dfs[1:]:
             outdf = outdf.merge(df, *args, **kwargs)
         return outdf
 
-    @utils.protector
     def reform(self, df, colname_as_index, colname_as_header, colname_as_values):
         indexes = np.unique(df[colname_as_index])
         headers = np.unique(df[colname_as_header])
@@ -106,7 +79,6 @@ class Model():
         new_df = new_df.reset_index()
         return new_df
 
-    @utils.protector
     def load_data(self, path, separator="\t", decimal=",", header=None, encoding="latin-1", clean=True, sort=False):
         df = pd.read_csv(path, sep=separator, decimal=decimal, encoding=encoding, index_col=None, header=header)
         if clean:
@@ -122,7 +94,6 @@ class Model():
         df = df.drop_duplicates()
         return df
 
-    @utils.protector
     def rearrange(self, df, value_colname, new_colname=None, new_indname=None, out_as_dict=False):
         if new_indname is not None:
             df = df.set_index(new_indname)
@@ -149,8 +120,7 @@ class Model():
             d = d.reset_index()
         return d
 
-    @utils.protector
-    def standardize(self, df, type_dict, format_dict={}, unit_dict={}):
+    def standardize(self, df, type_dict, format_dict={}, unit_dict={}, force={}):
         types = {'': None, 'integer': np.int64, 'float': np.float64, 'boolean': bool,
                  'string': str, 'datetime': datetime, 'timedelta': timedelta}
         for colname in type_dict:
@@ -158,16 +128,18 @@ class Model():
             if types[t]:
                 if t == 'datetime':
                     if ' OR ' in format_dict[colname]:
-                        df[colname] = utils.to_datetime(df[colname], formats=format_dict[colname].split(' OR '))
+                        df[colname] = utils.to_datetime(df[colname], formats=format_dict[colname].split(' OR '),
+                                                        force=force[colname])
                     else:
-                        df[colname] = pd.to_datetime(df[colname], format=format_dict[colname])
+                        df[colname] = pd.to_datetime(df[colname], format=format_dict[colname],
+                                                     errors='coerce' if force[colname] else 'raise')
                 elif t == 'timedelta':
-                    df[colname] = pd.to_timedelta(df[colname], unit=unit_dict[colname])
+                    df[colname] = pd.to_timedelta(df[colname], unit=unit_dict[colname],
+                                                  errors='coerce' if force[colname] else 'raise')
                 else:
                     df[colname] = df[colname].astype(types[t])
         return df
 
-    @utils.protector
     def apply_formula(self, df, formula, formula_name):
         formula = formula.replace("[", "df['")
         formula = formula.replace("]", "']")
@@ -178,7 +150,6 @@ class Model():
             raise SyntaxError("incorrect formula")
         return df
 
-    @utils.protector
     def compute_stats(self, df, column, groupBy=None,
                       statistics=["count", "minimum", "maximum", "mean", "sum", "median", "std"],
                       ignore_nan=True, out_as_dict=False):
@@ -255,7 +226,6 @@ class Model():
 
         return selections
 
-    @utils.protector
     def select_rows(self, df, column, equal_to=None, different_from=None,
                     higher_than=None, lower_than=None, logical="or"):
         selections = self.get_selections(df[column], equal_to, different_from, higher_than, lower_than)
@@ -267,11 +237,9 @@ class Model():
             df = df.loc[selection]
         return df
 
-    @utils.protector
     def select_columns(self, df, columns):
         return df[columns]
 
-    @utils.protector
     def save_data(self, dfs, path):
         if not isinstance(dfs, list):
             dfs = [dfs]
@@ -281,55 +249,111 @@ class Model():
             else:
                 df.to_csv(path, sep='\t', decimal=",", encoding="latin-1")
 
-    @utils.protector
-    def fit_closest_event(self, ref, ref_datetime_colname, ref_param_colname, data, datetime_colname, value_colname,
+    def fit_closest_event(self, events, events_datetime_colname, events_param_colname,
+                          data, datetime_colname, value_colname,
                           on, delta=['before', 'after'], groupby=None, column_prefix=""):
+        """
+        This function find the values of parameters closest (in terms of time) to specified event
+
+        Parameters
+        ----------
+        events: pd.DataFrame
+            data of events
+        events_datetime_colname: str
+            name of the 'events' column which contains the events datetimes,
+            the column must be of type datetime.datetime
+        events_param_colname: str
+            name of the 'events' column which contains the event name
+        data: pd.DataFrame
+            data of parameters
+        datetime_colname: str
+            name of the 'data' column which contains the parameters datetimes,
+            the column must be of type datetime.datetime
+        value_colname: str
+            name of the 'data' column which contains the parameters values
+        on: str
+            common key column name for 'data' and 'events'
+        delta: list, default=['before', 'after']
+            if before inside this list, extract the closest parameter value before the event
+            if after inside this list, extract the closest parameter value after the event
+        groupby: str or None, default=None
+            column name of 'events'. If not None apply this function for each unique value
+            of the 'events' column
+        column_prefix: str, default=""
+            prefix for created column names
+
+        Return
+        ------
+        outdf: pd.DataFrame
+            data with events in lines and values/delays before and after each event
+
+        Example
+        -------
+
+
+        """
+
         left_on, right_on = on, on
         if groupby is not None:
+            # apply the 'fit_closest_event' function for each unique value of the
+            # 'groupby' column'
             outdf = pd.DataFrame()
             data = data.set_index(groupby)
+
+            # loop over 'gropby column unique values'
             params = np.unique(data.index)
             for param in params:
-                out = self.fit_closest_event(ref, ref_datetime_colname, ref_param_colname, data.loc[param],
-                                             datetime_colname, value_colname, on, delta, column_prefix=param)
+                groupby = None
+                out = self.fit_closest_event(events, events_datetime_colname, events_param_colname, data.loc[param],
+                                             datetime_colname, value_colname, on, delta, groupby, param)
+                # concatenate single-parameter result with muli-parameters result
                 outdf = pd.concat([outdf, out], axis=1)
         else:
+            # initialize
             outdf = {}
-
             data_names = np.unique(data[right_on])
-
-            ref = ref.set_index(left_on)
-            ref = ref[[ref_datetime_colname, ref_param_colname]]
-
+            events = events.set_index(left_on)
+            events = events[[events_datetime_colname, events_param_colname]]
             data = data.set_index([right_on, datetime_colname])
             data = data[value_colname]
 
-            for name in np.unique(ref.index):
+            # loop over key index (common to events and data)
+            for name in np.unique(events.index):
                 if name not in data_names:
                     continue
-                subref = ref.loc[[name]]
+                subevents = events.loc[[name]]
                 subdata = data.loc[name]
+
+                # sort data in order to use ffill and backfill properly
                 subdata = subdata[~subdata.index.duplicated(keep='first')].sort_index()
 
-                for i in range(len(subref.index)):
-                    refdate, refparam = subref.iloc[i]
+                # loop over events
+                for i in range(len(subevents.index)):
+                    eventsdate, eventsparam = subevents.iloc[i]
                     d = {}
+
+                    # get value with datetime anterior and closest to eventsdate
                     if 'before' in delta:
                         try:
-                            ind_before = subdata.index.get_loc(refdate, method='ffill')
+                            ind_before = subdata.index.get_loc(eventsdate, method='ffill')
                             d["_".join([column_prefix, "value before"])] = subdata.iloc[ind_before]
-                            d["_".join([column_prefix, "delay before"])] = refdate - subdata.index[ind_before]
+                            d["_".join([column_prefix, "delay before"])] = eventsdate - subdata.index[ind_before]
                         except KeyError:
                             pass
+
+                    # get value with datetime posterior and closest to eventsdate
                     if 'after' in delta:
                         try:
-                            ind_after = subdata.index.get_loc(refdate, method='backfill')
+                            ind_after = subdata.index.get_loc(eventsdate, method='backfill')
                             d["_".join([column_prefix, "value after"])] = subdata.iloc[ind_after]
-                            d["_".join([column_prefix, "delay after"])] = subdata.index[ind_after] - refdate
+                            d["_".join([column_prefix, "delay after"])] = subdata.index[ind_after] - eventsdate
                         except KeyError:
                             pass
-                    outdf[(name, refparam, refdate)] = d
+                    outdf[(name, eventsparam, eventsdate)] = d
 
+            # convert result to dataframe
             outdf = pd.DataFrame.from_dict(outdf, orient='index')
+            # outdf.index.names = [left_on, events_param_colname, events_datetime_colname]
+            # outdf = outdf.reset_index()
 
         return outdf

@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
-from src import DESIGN_DIR, DEFAULT
+from src import DESIGN_DIR, DEFAULT, CONFIG_DIR
 from src.view import graph, utils
 import json
 import os
@@ -22,7 +22,7 @@ class View(QtWidgets.QMainWindow):
 
         # set short cuts
         self.save = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+S'), self)
-        self.save.activated.connect(self.storeSettings)
+        self.save.activated.connect(self.saveSettings)
 
         self.restore = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'), self)
         self.restore.activated.connect(self.restoreSettings)
@@ -87,22 +87,30 @@ class View(QtWidgets.QMainWindow):
         self.setTabPosition(QtCore.Qt.LeftDockWidgetArea, QtWidgets.QTabWidget.East)
 
         self.settings = {'graph': {}}
+        if os.path.isfile(os.path.join(CONFIG_DIR, 'settings.json')):
+            with open(os.path.join(CONFIG_DIR, 'settings.json'), 'r') as fp:
+                self.settings.update(json.load(fp))
+
         self.graph = graph.QGraph(self, 'vertical')
         self.setCentralWidget(self.graph)
         self.setWindowState(QtCore.Qt.WindowActive)
 
-    def initMenu(self, modules):
+    def initModulesParameters(self, modules):
         """
         create right-clic menu from modules
         """
         # initalize right-clic-menu
         self.menu = {}
+        self.modules_parameters = {}
         for k, values in modules.items():
             lst = [values['type']]
             if 'menu' in values:
                 lst += values['menu'].split('/')
             lst.append(k)
             utils.dict_from_list(self.menu, lst)
+            self.modules_parameters[k] = {'color': values.get('color'),
+                                          'nparents': values.get('nparents')}
+        print(self.modules_parameters)
 
     def addModule(self, moduleName):
         """
@@ -155,8 +163,10 @@ class View(QtWidgets.QMainWindow):
         dock.raise_()
         return dock
 
-    def storeSettings(self):
-        self.settings['graph'].update(self.graph.getSettings())
+    def saveSettings(self):
+        self.settings['graph'] = self.graph.getSettings()
+        with open(os.path.join(CONFIG_DIR, 'settings.json'), 'w') as fp:
+            json.dump(self.settings, fp, indent=4)
 
     def restoreSettings(self):
         self.graph.setSettings(self.settings['graph'])

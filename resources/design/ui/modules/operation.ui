@@ -243,7 +243,9 @@
           <number>0</number>
          </property>
          <item>
-          <layout class="QGridLayout" name="grid"/>
+          <widget class="QWidget" name="colnames" native="true">
+           <layout class="QGridLayout" name="grid"/>
+          </widget>
          </item>
          <item>
           <spacer name="verticalSpacer">

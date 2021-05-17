@@ -46,6 +46,7 @@
         "type": "secondary",
         "menu": "advanced",
         "function": "call_merge",
+        "nparents": 2,
         "color": [155, 222, 163, 255]
     },
 
@@ -53,12 +54,15 @@
         "type": "secondary",
         "menu": "research",
         "function": "call_fit_closest_event",
+        "nparents": 2,
         "color": [250, 238, 174, 255]
     },
 
     "save": {
         "type": "secondary",
-        "function": "call_save_data"
+        "function": "call_save_data",
+        "nparents": -1,
+        "color": [0, 0, 0, 255]
     },
 
     "delete": {

@@ -82,16 +82,17 @@ class QGridButtonGroup(QtWidgets.QWidget):
         elif self.max_col is not None:
             return np.ceil(n / self.max_col), self.max_col
 
-    def addWidgets(self, type, names):
-        if type in [QtWidgets.QPushButton, QtWidgets.QCheckBox]:
+    def addWidgets(self, widget_type, names, checkable=True):
+        if widget_type in [QtWidgets.QPushButton, QtWidgets.QCheckBox]:
             self.group.setExclusive(False)
+            print('not exclusive')
         positions = self.computePositions(len(names))
         i = 0
         for row in range(int(positions[0])):
             for col in range(int(positions[1])):
                 if i < len(names):
-                    widget = type(names[i])
-                    if isinstance(widget, QtWidgets.QPushButton):
+                    widget = widget_type(names[i])
+                    if checkable and isinstance(widget, QtWidgets.QPushButton):
                         widget.setCheckable(True)
                     self._grid.addWidget(widget, row, col)
                     self.group.addButton(widget)

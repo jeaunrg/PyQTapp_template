@@ -31,7 +31,7 @@ class Presenter():
     # ------------------------------ CONNECTIONS ------------------------------#
     def init_view_connections(self):
         self.modules = json.load(open(os.path.join(CONFIG_DIR, "modules.json"), "rb"))
-        self._view.initMenu(self.modules)
+        self._view.initModulesParameters(self.modules)
         self._view.graph.nodeAdded.connect(lambda m: self.init_module_connections(m))
 
     def init_module_connections(self, module):
@@ -54,13 +54,10 @@ class Presenter():
         except AttributeError as e:
             print(e)
 
-        module.setColor(parameters.get('color'))
-
         module.saveDataClicked.connect(lambda: self.call_save_data(module))
         self.init_modules_custom_connections(module)
 
     def init_modules_custom_connections(self, module):
-
         if module.type == "loadCSV":
             module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
 
@@ -88,23 +85,12 @@ class Presenter():
                 module.parameters.group_by.addItems([''] + parent_colnames[0])
 
             elif module.type == "selectColumns":
-                ncol = 2
-                i, j = 0, 0
-                for colname in parent_colnames[0]:
-                    button = QtWidgets.QPushButton(colname)
-                    button.setCheckable(True)
-                    button.setChecked(True)
-                    module.parameters.grid.addWidget(button, i, j)
-                    module.parameters.grid.__dict__[colname] = button
-                    j += 1
-                    if j == ncol:
-                        j, i = 0, i+1
-
-                def checkAll(state):
-                    for b in module.parameters.grid.__dict__.values():
-                        b.setChecked(state)
-                module.parameters.selectAll.clicked.connect(lambda s: checkAll(True))
-                module.parameters.deselectAll.clicked.connect(lambda s: checkAll(False))
+                grid = ui.QGridButtonGroup(3)
+                module.parameters.colnames = replaceWidget(module.parameters.colnames, grid)
+                grid.addWidgets(QtWidgets.QPushButton, parent_colnames[0])
+                grid.checkAll()
+                module.parameters.selectAll.clicked.connect(lambda s: grid.checkAll(True))
+                module.parameters.deselectAll.clicked.connect(lambda s: grid.checkAll(False))
 
             elif module.type == "selectRows":
                 module.parameters.column.addItems(parent_colnames[0])
@@ -119,20 +105,17 @@ class Presenter():
                 module.parameters.right_on.addItems(['']+flatten_colnames)
 
             elif module.type == "operation":
-                def connectButton(but, txt_format="{0} {1}"):
+                def connectButton(but, addBrackets=False):
+                    txt_format = "{0} [{1}]" if addBrackets else "{0} {1}"
                     txt = '/' if but.objectName() == 'divide' else but.text()
                     but.clicked.connect(lambda: module.parameters.formula.setText(
                                         txt_format.format(module.parameters.formula.text(), txt)))
 
-                ncol = 2
-                i, j = 0, 0
-                for colname in parent_colnames[0]:
-                    button = QtWidgets.QPushButton(colname)
-                    module.parameters.grid.addWidget(button, i, j)
-                    connectButton(button, "{0} [{1}]")
-                    j += 1
-                    if j == ncol:
-                        j, i = 0, i+1
+                grid = ui.QGridButtonGroup(3)
+                module.parameters.colnames = replaceWidget(module.parameters.colnames, grid)
+                grid.addWidgets(QtWidgets.QPushButton, parent_colnames[0], checkable=False)
+                for button in grid.group.buttons():
+                    connectButton(button, True)
 
                 for button in [module.parameters.subtract, module.parameters.add,
                                module.parameters.multiply, module.parameters.divide,
@@ -174,10 +157,6 @@ class Presenter():
 
     def update_sql_module(self, module):
         database_description = self._model.describe_database(module.parameters.path.text())
-
-        # test connection
-        if isinstance(database_description, Exception):
-            return self.call_test_database_connection(module)
 
         # create table grid
         grid = ui.QGridButtonGroup(3)
@@ -223,7 +202,7 @@ class Presenter():
         if output is not None:
             utils.store_data(module.name, output)
         if isinstance(output, Exception):
-            module.setState('fail', "[{0}] {1}".format(type(output).__name__, output))
+            module.setState('fail')
         else:
             module.setState('valid')
 
@@ -296,11 +275,12 @@ class Presenter():
 
     @utils.manager(True)
     def call_standardize(self, module):
-        type_dict, format_dict, unit_dict = {}, {}, {}
+        type_dict, format_dict, unit_dict, force_dict = {}, {}, {}, {}
         for i in range(module.parameters.form.rowCount()):
             label = module.parameters.form.itemAt(i, 0).widget().text()
             hbox = module.parameters.form.itemAt(i, 1).widget().layout()
             type_dict[label] = hbox.itemAt(0).widget().currentText()
+            force_dict[label] = hbox.itemAt(3).widget().isChecked()
             if type_dict[label] == 'datetime':
                 format_dict[label] = hbox.itemAt(1).widget().text()
             if type_dict[label] == 'timedelta':
@@ -312,7 +292,8 @@ class Presenter():
         args = {"df": utils.get_data(module.get_parent_names()[0]),
                 "type_dict": type_dict,
                 "format_dict": format_dict,
-                "unit_dict": unit_dict}
+                "unit_dict": unit_dict,
+                "force": force_dict}
         return function, args
 
     @utils.manager(True)
@@ -342,7 +323,7 @@ class Presenter():
     def call_select_columns(self, module):
         function = self._model.select_columns
         args = {"df": utils.get_data(module.get_parent_names()[0]),
-                "columns": utils.get_checked(module.parameters.grid)}
+                "columns": module.parameters.colnames.checkedButtonsText()}
         return function, args
 
     @utils.manager(True)
