@@ -207,6 +207,10 @@ class QGraph(QtWidgets.QGraphicsView):
         if isinstance(new_color, list) or new_color.isValid():
             node.setColor(new_color)
 
+    def deleteAll(self):
+        while self.nodes:
+            self.deleteBranch(list(self.nodes.values())[0])
+
     def deleteBranch(self, parent, childs_only=False):
         """
         delete node, its children and the associated data recursively

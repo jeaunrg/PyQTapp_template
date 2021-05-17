@@ -26,6 +26,7 @@ class View(QtWidgets.QMainWindow):
 
         self.restore = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'), self)
         self.restore.activated.connect(self.restoreSettings)
+        self.session = None
 
         self.modules = {}
         self.initStyle()
@@ -35,12 +36,6 @@ class View(QtWidgets.QMainWindow):
         """
         This method initialize styles and useful icons
         """
-        # initialize icons
-        self._fail = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "fail.png"))
-        self._fail = self._fail.scaled(15, 15, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
-        self._valid = QtGui.QPixmap(os.path.join(DESIGN_DIR, "icon", "valid.png"))
-        self._valid = self._valid.scaled(15, 15, QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
-
         # create menu and actions for stylesheet and themes
         self.theme, self.style = None, None
 
@@ -49,6 +44,7 @@ class View(QtWidgets.QMainWindow):
             act = QtWidgets.QAction(name, self)
             act.triggered.connect(lambda: function(name))
             return act
+
         # add menus
         menuStyles = self.menuPreferences.addMenu('Styles')
         for style in os.listdir(os.path.join(DESIGN_DIR, 'qss')):
@@ -87,9 +83,9 @@ class View(QtWidgets.QMainWindow):
         self.setTabPosition(QtCore.Qt.LeftDockWidgetArea, QtWidgets.QTabWidget.East)
 
         self.settings = {'graph': {}}
-        if os.path.isfile(os.path.join(CONFIG_DIR, 'settings.json')):
-            with open(os.path.join(CONFIG_DIR, 'settings.json'), 'r') as fp:
-                self.settings.update(json.load(fp))
+
+        self.actionOpenSession.triggered.connect(self.openSession)
+        self.actionNewSession.triggered.connect(self.newSession)
 
         self.graph = graph.QGraph(self, 'vertical')
         self.setCentralWidget(self.graph)
@@ -110,7 +106,6 @@ class View(QtWidgets.QMainWindow):
             utils.dict_from_list(self.menu, lst)
             self.modules_parameters[k] = {'color': values.get('color'),
                                           'nparents': values.get('nparents')}
-        print(self.modules_parameters)
 
     def addModule(self, moduleName):
         """
@@ -163,9 +158,34 @@ class View(QtWidgets.QMainWindow):
         dock.raise_()
         return dock
 
+    def openSession(self):
+        sessions = [os.path.splitext(i)[0] for i in os.listdir(os.path.join(CONFIG_DIR, "sessions"))]
+        session, ok = QtWidgets.QInputDialog.getItem(None, "Sessions", 'open session:', sessions, 0, False)
+        if ok:
+            self.graph.deleteAll()
+            self.session = session
+            self.loadSettings(False)
+            self.restoreSettings()
+
+    def newSession(self):
+        session, ok = QtWidgets.QInputDialog.getText(None, "New session", 'session name:')
+        if ok:
+            self.session = session
+            self.settings = {'graph': {}}
+            self.graph.deleteAll()
+            self.saveSettings()
+
+    def loadSettings(self, append=True):
+        if os.path.isfile(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json')):
+            with open(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json'), 'r') as fp:
+                if append:
+                    self.settings.update(json.load(fp))
+                else:
+                    self.settings = json.load(fp)
+
     def saveSettings(self):
         self.settings['graph'] = self.graph.getSettings()
-        with open(os.path.join(CONFIG_DIR, 'settings.json'), 'w') as fp:
+        with open(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json'), 'w') as fp:
             json.dump(self.settings, fp, indent=4)
 
     def restoreSettings(self):
