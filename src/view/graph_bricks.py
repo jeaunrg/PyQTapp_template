@@ -47,6 +47,8 @@ class QGraphicsNode(QtWidgets.QWidget):
         self.moveBy = self._item.moveBy
         self.pos = self._item.pos
 
+        self.propagation_child = None
+
         self.initUI(name)
 
     def initUI(self, name):
@@ -142,6 +144,9 @@ class QGraphicsNode(QtWidgets.QWidget):
 
     def get_parent_names(self):
         return [p.name for p in self.parents]
+
+    def get_parent_name(self, i=0):
+        return self.parents[i].name
 
     def moveSelection(self):
         if self is self.graph.focus:

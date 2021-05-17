@@ -26,6 +26,7 @@ class Presenter():
         self.threading_enabled = True
         self._data_dir = DATA_DIR
         self._out_dir = OUT_DIR
+        self.retro_propagation_stack = []
         self.init_view_connections()
 
     # ------------------------------ CONNECTIONS ------------------------------#
@@ -58,51 +59,46 @@ class Presenter():
         self.init_modules_custom_connections(module)
 
     def init_modules_custom_connections(self, module):
-        if module.type == "loadCSV":
-            module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
+        nparents = len(module.parents)
 
-        elif module.type == "SQLrequest":
-            module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
-            module.parameters.path.editingFinished.connect(lambda: self.update_sql_module(module))
-            module.parameters.browse.clicked.connect(lambda s: self.update_sql_module(module))
-            module.parameters.tableNames = replaceWidget(module.parameters.tableNames, ui.QGridButtonGroup())
-            module.parameters.colnames = replaceWidget(module.parameters.colnames, ui.QGridButtonGroup())
-            module.parameters.groupbox.hide()
-
-        elif module.type == "save":
+        if module.type == "save":
             module.parameters.browse.clicked.connect(lambda: self.browse_savepath(module))
 
-        else:
-            parent_colnames = [list(utils.get_data(name).columns) for name in
-                               module.get_parent_names() if isinstance(utils.get_data(name), pd.DataFrame)]
-            if not parent_colnames:
-                pass
+        elif nparents == 0:
+            if module.type == "loadCSV":
+                module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
 
-            elif module.type == "describe":
+            elif module.type == "SQLrequest":
+                module.parameters.browse.clicked.connect(lambda: self.browse_data(module))
+                module.parameters.path.editingFinished.connect(lambda: self.update_sql_module(module))
+                module.parameters.browse.clicked.connect(lambda s: self.update_sql_module(module))
+                module.parameters.tableNames = replaceWidget(module.parameters.tableNames, ui.QGridButtonGroup())
+                module.parameters.colnames = replaceWidget(module.parameters.colnames, ui.QGridButtonGroup())
+                module.parameters.groupbox.hide()
+
+        elif nparents == 1:
+            colnames = []
+            df = utils.get_data(module.get_parent_name())
+            if isinstance(df, pd.DataFrame):
+                colnames += list(df.columns)
+
+            if module.type == "describe":
                 module.parameters.column.clear()
-                module.parameters.column.addItems([''] + parent_colnames[0])
+                module.parameters.column.addItems([''] + colnames)
                 module.parameters.group_by.clear()
-                module.parameters.group_by.addItems([''] + parent_colnames[0])
+                module.parameters.group_by.addItems([''] + colnames)
 
             elif module.type == "selectColumns":
                 grid = ui.QGridButtonGroup(3)
                 module.parameters.colnames = replaceWidget(module.parameters.colnames, grid)
-                grid.addWidgets(QtWidgets.QPushButton, parent_colnames[0])
+                grid.addWidgets(QtWidgets.QPushButton, colnames)
                 grid.checkAll()
                 module.parameters.selectAll.clicked.connect(lambda s: grid.checkAll(True))
                 module.parameters.deselectAll.clicked.connect(lambda s: grid.checkAll(False))
 
             elif module.type == "selectRows":
-                module.parameters.column.addItems(parent_colnames[0])
-
-            elif module.type == "merge":
-                flatten_colnames = sum(parent_colnames, [])
-                module.parameters.on.clear()
-                module.parameters.on.addItems(flatten_colnames)
-                module.parameters.left_on.clear()
-                module.parameters.left_on.addItems(['']+flatten_colnames)
-                module.parameters.right_on.clear()
-                module.parameters.right_on.addItems(['']+flatten_colnames)
+                module.parameters.column.clear()
+                module.parameters.column.addItems([''] + colnames)
 
             elif module.type == "operation":
                 def connectButton(but, addBrackets=False):
@@ -113,7 +109,7 @@ class Presenter():
 
                 grid = ui.QGridButtonGroup(3)
                 module.parameters.colnames = replaceWidget(module.parameters.colnames, grid)
-                grid.addWidgets(QtWidgets.QPushButton, parent_colnames[0], checkable=False)
+                grid.addWidgets(QtWidgets.QPushButton, colnames, checkable=False)
                 for button in grid.group.buttons():
                     connectButton(button, True)
 
@@ -126,33 +122,52 @@ class Presenter():
             elif module.type == "standardize":
                 for i in range(module.parameters.form.rowCount()):
                     module.parameters.form.removeRow(0)
-                for i, colname in enumerate(parent_colnames[0]):
+                for i, colname in enumerate(colnames):
                     line = ui.QFormatLine()
                     module.parameters.form.addRow(QtWidgets.QLabel(colname), line)
                     module.parameters.__dict__['format_line_{}'.format(i)] = line
 
+        elif nparents == 2:
+            list_colnames = []
+            for name in module.get_parent_names():
+                colnames = ['']
+                df = utils.get_data(name)
+                if isinstance(df, pd.DataFrame):
+                    colnames += list(df.columns)
+                list_colnames.append(colnames)
+
+            if module.type == "merge":
+                module.parameters.on.clear()
+                module.parameters.on.addItems(list(set(list_colnames[0]) & set(list_colnames[1])))
+                module.parameters.left_on.clear()
+                module.parameters.left_on.addItems(list_colnames[0])
+                module.parameters.right_on.clear()
+                module.parameters.right_on.addItems(list_colnames[1])
+
             elif module.type == "timeEventFitting":
-                for cb in [module.parameters.event, module.parameters.params]:
-                    cb.clear()
-                    cb.addItems(module.get_parent_names())
-                cb.setEnabled(False)
+                module.parameters.event.clear()
+                module.parameters.event.addItems(module.get_parent_names())
+                module.parameters.params.clear()
+                module.parameters.params.addItems(module.get_parent_names())
+                module.parameters.params.setEnabled(False)
 
                 def fillCombos(eventId):
                     paramsId = int(not eventId)
                     module.parameters.params.setCurrentIndex(paramsId)
                     module.parameters.groupBy.clear()
-                    module.parameters.groupBy.addItems([''] + parent_colnames[paramsId])
+                    module.parameters.groupBy.addItems(list_colnames[paramsId])
                     for cb in [module.parameters.paramsOn, module.parameters.paramsDatetime,
                                module.parameters.paramsValue]:
                         cb.clear()
-                        cb.addItems(parent_colnames[paramsId])
+                        cb.addItems(list_colnames[paramsId])
                     for cb in [module.parameters.eventOn, module.parameters.eventDatetime,
                                module.parameters.eventName]:
                         cb.clear()
-                        cb.addItems(parent_colnames[eventId])
+                        cb.addItems(list_colnames[eventId])
 
                 module.parameters.event.currentIndexChanged.connect(fillCombos)
                 module.parameters.event.currentIndexChanged.emit(0)
+
         module.setSettings(self._view.settings['graph'].get(module.name))
 
     def update_sql_module(self, module):
@@ -187,7 +202,15 @@ class Presenter():
         ----------
         module: QWidget
         """
+        for parent in module.parents:
+            if not isinstance(utils.get_data(parent.name), pd.DataFrame):
+                parent.propagation_child = module
+                activation_function = eval('self.'+self.modules[parent.type]['function'])
+                activation_function(parent)
+                return False
+
         module.setState('loading')
+        return True
 
     def post_manager(self, module, output):
         """
@@ -216,6 +239,11 @@ class Presenter():
         if any(are_running):
             module.setState('loading')
 
+        # continue process on propagation child module
+        if module.propagation_child is not None:
+            module.propagation_child.parameters.apply.clicked.emit()
+        module.propagation_child = None
+
     # ----------------------------- utils -------------------------------------#
     def browse_data(self, module):
         """
@@ -233,7 +261,7 @@ class Presenter():
         """
         open a browse window to define the nifti save path
         """
-        name = module.get_parent_names()[0]
+        name = module.get_parent_name()
         filename, extension = QtWidgets.QFileDialog.getSaveFileName(module.graph, 'Save file',
                                                                     os.path.join(self._out_dir, name), filter=".csv")
         self._out_dir = os.path.dirname(filename)
@@ -289,7 +317,7 @@ class Presenter():
                 type_dict[label] = ''
 
         function = self._model.standardize
-        args = {"df": utils.get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_name()),
                 "type_dict": type_dict,
                 "format_dict": format_dict,
                 "unit_dict": unit_dict,
@@ -299,7 +327,7 @@ class Presenter():
     @utils.manager(True)
     def call_describe(self, module):
         function = self._model.compute_stats
-        args = {"df": utils.get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_name()),
                 "column": empty_to_none(module.parameters.column.currentText()),
                 "groupBy": empty_to_none(module.parameters.group_by.currentText()),
                 "statistics": utils.get_checked(module.parameters, ["count", "minimum", "maximum",
@@ -310,7 +338,7 @@ class Presenter():
     @utils.manager(True)
     def call_select_rows(self, module):
         function = self._model.select_rows
-        args = {"df": utils.get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_name()),
                 "column": module.parameters.column.currentText(),
                 "equal_to":  ceval(module.parameters.equal_to.text()),
                 "different_from":  ceval(module.parameters.different_from.text()),
@@ -322,14 +350,14 @@ class Presenter():
     @utils.manager(True)
     def call_select_columns(self, module):
         function = self._model.select_columns
-        args = {"df": utils.get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_name()),
                 "columns": module.parameters.colnames.checkedButtonsText()}
         return function, args
 
     @utils.manager(True)
     def call_operation(self, module):
         function = self._model.apply_formula
-        args = {"df": utils.get_data(module.get_parent_names()[0]),
+        args = {"df": utils.get_data(module.get_parent_name()),
                 "formula": module.parameters.formula.text(),
                 "formula_name": module.name}
         return function, args

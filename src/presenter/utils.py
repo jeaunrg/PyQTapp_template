@@ -43,7 +43,9 @@ def manager(threadable=True):
     """
     def decorator(foo):
         def inner(presenter, module):
-            presenter.prior_manager(module)
+            cont = presenter.prior_manager(module)
+            if not cont:
+                return
             function, args = foo(presenter, module)
             function = protector(function)
 
@@ -70,6 +72,14 @@ def protector(foo):
         except Exception as e:
             return e
     return inner
+
+
+def get_unavailable(names):
+    unvailable = []
+    for name in names:
+        if name not in RESULT_STACK:
+            unvailable.append(name)
+    return unvailable
 
 
 def get_data(name):
