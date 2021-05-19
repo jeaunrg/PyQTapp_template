@@ -14,10 +14,12 @@ def main():
 
     # UI
     view = View()
-    view.show()
     # background processes
     model = Model()
     # bridge between processes and UI
     Presenter(view, model)
 
-    app.exec()
+    # open session
+    if view.openSession():
+        view.show()
+        app.exec()

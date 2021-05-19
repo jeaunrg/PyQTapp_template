@@ -11,6 +11,8 @@ CONFIG_DIR = os.path.join(MAIN_DIR, "config")
 DATA_DIR = os.path.join(RESOURCE_DIR, "data")
 OUT_DIR = os.path.join(DATA_DIR, "out")
 
+KEY = 'CchfHeEVsE1hMldggpUEXduYH29pUp2ujYE7LPjZhOA='
+
 # true results
 RESULT_STACK = {}
 

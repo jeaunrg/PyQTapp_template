@@ -85,7 +85,6 @@ class QGridButtonGroup(QtWidgets.QWidget):
     def addWidgets(self, widget_type, names, checkable=True):
         if widget_type in [QtWidgets.QPushButton, QtWidgets.QCheckBox]:
             self.group.setExclusive(False)
-            print('not exclusive')
         positions = self.computePositions(len(names))
         i = 0
         for row in range(int(positions[0])):
@@ -153,3 +152,23 @@ class PandasModel(QtCore.QAbstractTableModel):
             return self.format(self._data.columns[col])
         elif orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
             return self.format(self._data.index[col])
+
+
+class QCustomDialog(QtWidgets.QDialog):
+    def __init__(self, title, uipath, parent=None):
+        super(QCustomDialog, self).__init__(parent)
+        uic.loadUi(uipath, self)
+        self.setWindowTitle(title)
+        self.out = None
+        self.initConnections()
+
+    def initConnections(self):
+        def connect(widget):
+            w.clicked.connect(lambda: self.accept(widget.text()))
+        for w in self.__dict__.values():
+            if isinstance(w, QtWidgets.QPushButton):
+                connect(w)
+
+    def accept(self, out):
+        self.out = out
+        QtWidgets.QDialog.accept(self)

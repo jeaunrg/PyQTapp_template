@@ -223,7 +223,7 @@
           <x>0</x>
           <y>0</y>
           <width>288</width>
-          <height>96</height>
+          <height>160</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -248,6 +248,23 @@
           </widget>
          </item>
          <item>
+          <widget class="QLineEdit" name="formula">
+           <property name="placeholderText">
+            <string>write operation here...</string>
+           </property>
+           <property name="clearButtonEnabled">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="apply">
+           <property name="text">
+            <string>apply</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="verticalSpacer">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -265,23 +282,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <widget class="QLineEdit" name="formula">
-     <property name="placeholderText">
-      <string>write operation here...</string>
-     </property>
-     <property name="clearButtonEnabled">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="apply">
-     <property name="text">
-      <string>apply</string>
-     </property>
-    </widget>
    </item>
   </layout>
  </widget>

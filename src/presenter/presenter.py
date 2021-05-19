@@ -202,6 +202,7 @@ class Presenter():
         ----------
         module: QWidget
         """
+        module.setState('loading')
         for parent in module.parents:
             if not isinstance(utils.get_data(parent.name), pd.DataFrame):
                 parent.propagation_child = module
@@ -209,7 +210,6 @@ class Presenter():
                 activation_function(parent)
                 return False
 
-        module.setState('loading')
         return True
 
     def post_manager(self, module, output):

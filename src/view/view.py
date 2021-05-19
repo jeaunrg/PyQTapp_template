@@ -1,6 +1,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, uic
-from src import DESIGN_DIR, DEFAULT, CONFIG_DIR
-from src.view import graph, utils
+from src import DESIGN_DIR, DEFAULT, CONFIG_DIR, KEY
+from src.view import graph, utils, ui
+from cryptography import fernet
 import json
 import os
 
@@ -26,7 +27,11 @@ class View(QtWidgets.QMainWindow):
 
         self.restore = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+R'), self)
         self.restore.activated.connect(self.restoreSettings)
+
+        self.newsession = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+N'), self)
+        self.newsession.activated.connect(self.openSession)
         self.session = None
+        self._password = None
 
         self.modules = {}
         self.initStyle()
@@ -84,7 +89,7 @@ class View(QtWidgets.QMainWindow):
 
         self.settings = {'graph': {}}
 
-        self.actionOpenSession.triggered.connect(self.openSession)
+        self.actionOpenSession.triggered.connect(self.loadSession)
         self.actionNewSession.triggered.connect(self.newSession)
 
         self.graph = graph.QGraph(self, 'vertical')
@@ -118,7 +123,6 @@ class View(QtWidgets.QMainWindow):
         """
         module = uic.loadUi(os.path.join(DESIGN_DIR, "ui", moduleName+".ui"))
         self.hbox.addWidget(module)
-
         self.modules[moduleName] = module
 
     def addWidgetInDock(self, widget, side=QtCore.Qt.RightDockWidgetArea, unique=True):
@@ -139,7 +143,6 @@ class View(QtWidgets.QMainWindow):
             self.restoreDockWidget(dock)
         else:
             dock = QtWidgets.QDockWidget()
-            # dock.setAttribute(QtCore.Qt.WA_DeleteOnClose, True)
             dock.setAllowedAreas(QtCore.Qt.RightDockWidgetArea | QtCore.Qt.LeftDockWidgetArea)
             dock.setFeatures(QtWidgets.QDockWidget.AllDockWidgetFeatures)
 
@@ -159,37 +162,101 @@ class View(QtWidgets.QMainWindow):
         return dock
 
     def openSession(self):
-        sessions = [os.path.splitext(i)[0] for i in os.listdir(os.path.join(CONFIG_DIR, "sessions"))]
+        """
+        open dialog to orient on load or create new session
+        """
+        dialog = ui.QCustomDialog("open session", os.path.join(DESIGN_DIR, "ui", "openSession.ui"), self)
+        dialog.exec()
+        if dialog.out == "Load session":
+            return self.loadSession()
+        elif dialog.out == "New session":
+            return self.newSession()
+        return False
+
+    def loadSession(self):
+        """
+        load existing session
+        """
+        sessions = [i[:-5] for i in os.listdir(os.path.join(CONFIG_DIR, "sessions"))]
         session, ok = QtWidgets.QInputDialog.getItem(None, "Sessions", 'open session:', sessions, 0, False)
         if ok:
+            self._password = None
             self.graph.deleteAll()
             self.session = session
+            self.setWindowTitle(session)
             self.loadSettings(False)
             self.restoreSettings()
+            return True
+        else:
+            return self.openSession()
 
     def newSession(self):
-        session, ok = QtWidgets.QInputDialog.getText(None, "New session", 'session name:')
-        if ok:
-            self.session = session
-            self.settings = {'graph': {}}
+        """
+        create new session
+        """
+        dialog = ui.QCustomDialog("new session", os.path.join(DESIGN_DIR, "ui", "newSession.ui"), self)
+        dialog.exec()
+        if dialog.out == 'Cancel':
+            return self.openSession()
+        elif dialog.out == 'Ok':
+            self._password = dialog.password.text() if dialog.password.text() else None
+            self.session = dialog.name.text()
+            self.setWindowTitle(self.session)
             self.graph.deleteAll()
             self.saveSettings()
+            return True
 
-    def loadSettings(self, append=True):
-        if os.path.isfile(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json')):
-            with open(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json'), 'r') as fp:
-                if append:
-                    self.settings.update(json.load(fp))
-                else:
-                    self.settings = json.load(fp)
+    def loadSettings(self, append=False):
+        """
+        load settings,
+        if settings cannot be loaded ask for password to decrypt data
+        """
+        path = os.path.join(CONFIG_DIR, 'sessions', self.session + '.json')
+        if not os.path.isfile(path):
+            return
+
+        try:
+            with open(path, 'r') as fp:
+                settings = json.load(fp)
+
+        except json.decoder.JSONDecodeError:
+            password, ok = QtWidgets.QInputDialog.getText(None, "Load session", 'password:',
+                                                          QtWidgets.QLineEdit.Password)
+            if not ok:
+                return self.loadSession()
+            key = password + KEY[len(password):]
+            crypt = fernet.Fernet(key.encode('utf-8'))
+            self._password = password
+            with open(path, 'rb') as fp:
+                data = fp.read()
+            try:
+                decrypted_data = crypt.decrypt(data)
+            except fernet.InvalidToken:
+                return self.loadSettings(append)
+            settings = json.loads(decrypted_data.decode('utf-8'))
+
+        if append:
+            self.settings.update(settings)
+        else:
+            self.settings = settings            #
 
     def saveSettings(self):
+        """
+        save settings, encrypt settings if a password is specified
+        """
         self.settings['graph'] = self.graph.getSettings()
-        with open(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json'), 'w') as fp:
-            json.dump(self.settings, fp, indent=4)
+
+        if self._password is not None:
+            key = self._password + KEY[len(self._password):]
+            settings = json.dumps(self.settings).encode('utf-8')
+            crypt = fernet.Fernet(key.encode('utf-8'))
+            encrypted_settings = crypt.encrypt(settings)
+            with open(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json'), 'wb') as fp:
+                fp.write(encrypted_settings)
+
+        else:
+            with open(os.path.join(CONFIG_DIR, 'sessions', self.session + '.json'), 'w') as fp:
+                json.dump(self.settings, fp, indent=4)
 
     def restoreSettings(self):
         self.graph.setSettings(self.settings['graph'])
-
-    def closeEvent(self, event):
-        QtWidgets.QMainWindow.closeEvent(self, event)

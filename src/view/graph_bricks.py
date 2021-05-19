@@ -49,6 +49,7 @@ class QGraphicsNode(QtWidgets.QWidget):
 
         self.propagation_child = None
 
+        self.setToolTip(type)
         self.initUI(name)
 
     def initUI(self, name):
@@ -115,12 +116,10 @@ class QGraphicsNode(QtWidgets.QWidget):
 
     def enterEvent(self, event):
         self.focused.emit(True)
-        self._item.setZValue(1000)
         return QtWidgets.QWidget.enterEvent(self, event)
 
     def leaveEvent(self, event):
         self.focused.emit(False)
-        self._item.setZValue(1)
         return QtWidgets.QWidget.leaveEvent(self, event)
 
     def setState(self, state=None):

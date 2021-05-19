@@ -1,5 +1,6 @@
 # output folder
 resources/data/*
+config/sessions/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
