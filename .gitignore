@@ -1,6 +1,7 @@
 # output folder
-resources/data/*
-config/sessions/*
+resources/data/*.*
+resources/data/out/*.csv
+config/sessions/*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
