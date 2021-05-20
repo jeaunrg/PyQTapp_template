@@ -16,43 +16,25 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="2" column="3">
-      <widget class="QLabel" name="label_9">
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_2">
        <property name="text">
-        <string>on</string>
+        <string>Event</string>
        </property>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QComboBox" name="eventOn"/>
-     </item>
-     <item row="3" column="1">
-      <widget class="QComboBox" name="eventDatetime"/>
-     </item>
-     <item row="1" column="2">
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item row="3" column="4">
-      <widget class="QComboBox" name="paramsDatetime"/>
-     </item>
-     <item row="5" column="4">
-      <widget class="QComboBox" name="groupBy"/>
-     </item>
      <item row="4" column="1">
-      <widget class="QComboBox" name="eventName"/>
-     </item>
-     <item row="4" column="4">
-      <widget class="QComboBox" name="paramsValue"/>
+      <widget class="QComboBox" name="eventName">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
      <item row="3" column="0">
       <widget class="QLabel" name="label">
@@ -61,37 +43,115 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>Event</string>
+     <item row="4" column="3">
+      <widget class="QComboBox" name="paramsValue">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="3">
+      <widget class="QComboBox" name="groupBy">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
      <item row="3" column="3">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>datetime</string>
+      <widget class="QComboBox" name="paramsDatetime">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="1" column="3">
+     <item row="2" column="2">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>on</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QComboBox" name="eventDatetime">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QComboBox" name="eventOn">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QComboBox" name="event">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
       <widget class="QLabel" name="label_4">
        <property name="text">
         <string>Parameter</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
-      <widget class="QComboBox" name="event"/>
-     </item>
-     <item row="2" column="4">
-      <widget class="QComboBox" name="paramsOn"/>
-     </item>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label_5">
+     <item row="3" column="2">
+      <widget class="QLabel" name="label_3">
        <property name="text">
-        <string>name</string>
+        <string>datetime</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="3">
+      <widget class="QComboBox" name="paramsOn">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -102,24 +162,37 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="3">
+     <item row="4" column="2">
       <widget class="QLabel" name="label_6">
        <property name="text">
         <string>value</string>
        </property>
       </widget>
      </item>
-     <item row="5" column="3">
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>name</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
       <widget class="QLabel" name="label_7">
        <property name="text">
         <string>group by</string>
        </property>
       </widget>
      </item>
-     <item row="1" column="4">
+     <item row="1" column="3">
       <widget class="QComboBox" name="params">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="editable">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
       </widget>
      </item>

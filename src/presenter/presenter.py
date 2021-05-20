@@ -100,6 +100,10 @@ class Presenter():
                 module.parameters.column.clear()
                 module.parameters.column.addItems([''] + colnames)
 
+            elif module.type == "round":
+                module.parameters.colname.clear()
+                module.parameters.colname.addItems(colnames)
+
             elif module.type == "operation":
                 def connectButton(but, addBrackets=False):
                     txt_format = "{0} [{1}]" if addBrackets else "{0} {1}"
@@ -352,6 +356,16 @@ class Presenter():
         function = self._model.select_columns
         args = {"df": utils.get_data(module.get_parent_name()),
                 "columns": module.parameters.colnames.checkedButtonsText()}
+        return function, args
+
+    @utils.manager(True)
+    def call_round(self, module):
+        function = self._model.round
+        args = {"df": utils.get_data(module.get_parent_name()),
+                "colname": module.parameters.colname.currentText(),
+                "mode": module.parameters.mode.currentText(),
+                "decimal": module.parameters.decimal.value(),
+                "freq": module.parameters.freq.currentText()}
         return function, args
 
     @utils.manager(True)

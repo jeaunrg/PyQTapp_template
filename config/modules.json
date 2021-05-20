@@ -29,6 +29,12 @@
         "color": [184, 218, 245, 255]
     },
 
+    "round": {
+        "type": "secondary",
+        "menu": "analysis",
+        "function": "call_round",
+        "color": [203, 155, 222, 255]
+    },
     "describe": {
         "type": "secondary",
         "menu": "analysis",

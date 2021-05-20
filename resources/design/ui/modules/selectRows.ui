@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>354</width>
-    <height>204</height>
+    <height>207</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,20 +37,17 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="column"/>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
+      <widget class="QComboBox" name="column">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
        </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
+       <property name="editable">
+        <bool>true</bool>
        </property>
-      </spacer>
+      </widget>
      </item>
      <item>
       <widget class="QCheckBox" name="ignore_nan">

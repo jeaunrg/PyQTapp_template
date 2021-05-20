@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>365</width>
+    <width>427</width>
     <height>217</height>
    </rect>
   </property>
@@ -45,12 +45,18 @@
      </item>
      <item row="0" column="3">
       <widget class="QComboBox" name="on">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
        <property name="editable">
         <bool>true</bool>
        </property>
       </widget>
      </item>
-     <item row="0" column="2">
+     <item row="0" column="2" alignment="Qt::AlignRight">
       <widget class="QLabel" name="label_2">
        <property name="text">
         <string>on</string>

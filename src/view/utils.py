@@ -100,6 +100,7 @@ def setValue(widget, value):
         widget.setText(value)
         widget.editingFinished.emit()
     elif isinstance(widget, QtWidgets.QComboBox):
+        print("set", value)
         widget.setCurrentText(value)
         widget.currentTextChanged.emit(value)
     elif isinstance(widget, ui.QFormatLine):

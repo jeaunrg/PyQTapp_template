@@ -58,6 +58,23 @@ class Model():
             outdf = outdf.merge(df, *args, **kwargs)
         return outdf
 
+    def round(self, df, colname, mode='floor', decimal=1, freq='min'):
+        """
+        mode: {'floor', 'ceil', 'round'}, default='round'
+        """
+
+        if pd.api.types.is_float_dtype(df[colname]):
+            if mode == 'round':
+                df[colname] = eval("np.around(df[colname], {})".format(decimal))
+            else:
+                df[colname] = eval("np.{}(df[colname])".format(mode))
+            return df
+        elif pd.api.types.is_timedelta64_dtype(df[colname]):
+            df[colname] = eval("df[colname].dt.{0}('{1}')".format(mode, freq))
+        else:
+            print(df[colname])
+        return df
+
     def reform(self, df, colname_as_index, colname_as_header, colname_as_values):
         indexes = np.unique(df[colname_as_index])
         headers = np.unique(df[colname_as_header])

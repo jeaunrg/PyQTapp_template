@@ -64,6 +64,12 @@ QLineEdit:focus, QComboBox:focus {
     border-color: %(feature_color)s;
 }
 
+QComboBox::down-arrow {
+    image: url(resources/design/icon/DropDownArrow.png);
+    width: 10px;
+    height: 10px;
+}
+
 QCheckBox, QRadioButton {
     color: %(maintext_color)s;
 }
