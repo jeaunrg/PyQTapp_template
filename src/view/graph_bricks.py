@@ -348,7 +348,11 @@ class QGraphicsLink(QtWidgets.QGraphicsPolygonItem):
         points = [rect.bottomLeft(), rect.bottomRight(), rect.topRight(), rect.topLeft()]
         for i in range(4):
             border = QtCore.QLineF(ref_position + points[i-1], ref_position + points[i])
-            intersection_type, intersection_point = line.intersects(border)
+            try:
+                intersection_type, intersection_point = line.intersects(border)
+            except AttributeError:
+                intersection_point = QtCore.QPointF()
+                intersection_type = line.intersect(border, intersection_point)
             if intersection_type == QtCore.QLineF.BoundedIntersection:
                 return intersection_point
         return QtCore.QPointF()
